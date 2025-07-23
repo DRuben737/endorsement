@@ -1,0 +1,192 @@
+/* ModalHeader样式 */
+.ModalHeader {
+  height: 60px; /* 固定高度为60px */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px; /* 添加左右内边距 */
+  background-color: #f9f9f9; /* 背景色 */
+  border-bottom: 1px solid #ccc; /* 底部边框 */
+  white-space: nowrap; /* 防止换行 */
+}
+
+/* HeaderContent的样式 */
+.HeaderContent {
+  flex-grow: 1; /* 使 HeaderContent 占满可用空间 */
+}
+
+/* HeaderButtons的样式 */
+.HeaderButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* 按钮之间的间距 */
+}
+
+/* CloseButton的样式 */
+.CloseButton {
+  background-color: #e74c3c; /* 背景颜色（红色） */
+  color: #fff; /* 字体颜色（白色） */
+  border: none; /* 移除边框 */
+  border-radius: 50%; /* 圆形按钮 */
+  width: 20px; /* 宽度 */
+  height: 20px; /* 高度 */
+  display: flex; /* 使用 flexbox 对齐图标 */
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
+  font-size: 10px; /* 字体大小 */
+  cursor: pointer; /* 鼠标悬停时显示手型 */
+  transition: background-color 0.3s, transform 0.2s; /* 添加过渡效果 */
+}
+
+/* ActionButtons的样式移除，因为我们不再需要这个独立的样式 */
+
+.ConfirmButton, .ClearSelectionButton {
+  background-color: #3498db; /* 背景颜色 */
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+/* 按钮悬停样式 */
+.ConfirmButton:hover, .ClearSelectionButton:hover, .CloseButton:hover {
+  transform: scale(1.05);
+}
+
+.ConfirmButton:hover {
+  background-color: #27ae60; /* 确认按钮的悬停背景颜色 */
+}
+
+.ClearSelectionButton:hover {
+  background-color: #2980b9; /* 清除按钮的悬停背景颜色 */
+}
+  
+  .ClearSelectionButton:focus {
+    outline: none; /* 移除焦点边框 */
+  }
+  
+  
+  /* SelectedTemplates的样式 */
+  .SelectedTemplates {
+    position: sticky; /* 使用 sticky 定位 */
+    top: 0; /* 固定在顶部 */
+    z-index: 10; /* 确保在其他内容之上 */
+    background-color: #f9f9f9; /* 背景颜色 */
+    padding: 5px; /* 内边距 */
+    border-bottom: 1px solid #ddd; /* 底部边框 */
+    height: 30px; /* 固定高度 */
+    display: flex; /* 使用 flexbox 布局 */
+    align-items: center; /* 垂直居中内容 */
+    overflow-x: auto; /* 允许水平滚动 */
+    overflow-y: hidden;
+  }
+  
+  
+  .SelectedTemplates ul {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto; /* 允许水平滚动 */
+    white-space: nowrap; /* 防止换行 */
+  }
+  
+  /* SelectedTemplate的样式 */
+  .SelectedTemplate {
+    display: flex;
+    align-items: center;
+    margin-right: 5px; /* 状态栏项之间的间距 */
+    padding: 5px; /* 内边距 */
+    background-color: #e0e0e0; /* 背景色 */
+    border-radius: 5px; /* 圆角 */
+    height: 100%; /* 使每个状态栏项填充状态栏高度 */
+    line-height: 30px; /* 行高，用于调整文本垂直居中 */
+    font-size: x-small;
+  }
+  
+  /* DeselectButton的样式 */
+  .DeselectButton {
+    background: none; /* 无背景 */
+    border: none; /* 无边框 */
+    color: red; /* 文字颜色 */
+    cursor: pointer; /* 手型指针 */
+    font-size: 0.8em; /* 更小的字体大小 */
+    width: 12px; /* 缩小按钮宽度 */
+    height: 12px; /* 缩小按钮高度 */
+    display: flex; /* 使用 flexbox 对齐图标 */
+    justify-content: center; /* 垂直居中 */
+    align-items: center; /* 水平居中 */
+    margin-left: 0px; /* 取消按钮与模板名称之间的间距 */
+    margin-right: 0px; /* 与其他按钮之间的间距 */
+    line-height: 1; /* 调整行高 */
+  }
+  
+  /* TemplateList的样式 */
+  .TemplateList {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+  }
+  
+  .TemplateList li {
+    padding: 10px;
+    cursor: pointer;
+  }
+  
+  .TemplateList .SelectedTemplate {
+    background-color: #e0e0e0;
+  }
+  /* 屏幕较小时的调整 */
+@media (max-width: 768px) {
+  .ModalHeader {
+    flex-direction: column;
+    height: auto;
+    padding: 10px;
+  }
+
+  .HeaderContent {
+    margin-bottom: 10px;
+  }
+
+  .HeaderButtons {
+    gap: 5px;
+  }
+
+  .SelectedTemplates {
+    height: auto;
+    padding: 10px 5px;
+  }
+
+  .SelectedTemplate {
+    font-size: smaller;
+    padding: 3px;
+    margin-right: 3px;
+  }
+
+  .ConfirmButton, .ClearSelectionButton {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+  }
+}
+
+/* 更小屏幕时的调整 */
+@media (max-width: 480px) {
+  .SelectedTemplates {
+    padding: 10px 2px;
+  }
+
+  .SelectedTemplate {
+    font-size: x-small;
+    padding: 2px;
+  }
+
+  .ConfirmButton, .ClearSelectionButton {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+  }
+}

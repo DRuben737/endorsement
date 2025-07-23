@@ -1,0 +1,67 @@
+/* EndorsementGenerator.module.css */
+
+/* 输入框部分样式 */
+.inputSection {
+    display: flex;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 10px; /* 输入框之间的间距 */
+    justify-content: center; /* 水平居中对齐 */
+    max-width: 800px; /* 最大宽度 */
+    margin: 0 auto; /* 自动水平居中 */
+  }
+  
+  /* 输入框样式 */
+  .inputSection input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: calc(25% - 20px); /* 每行三个输入框，考虑间距 */
+    box-sizing: border-box;
+    min-width: 150px; /* 设置最小宽度 */
+  }
+  
+  /* 按钮部分样式 */
+  .buttonSection {
+    display: flex;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 10px; /* 按钮之间的间距 */
+    max-width: 600px; /* 最大宽度，与输入框一致 */
+    margin: 0 auto; /* 居中对齐 */
+  }
+  
+  /* 按钮样式 */
+  .buttonSection button {
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    font-size: 14px; /* 保持字体大小不变 */
+    width: 120px; /* 设置按钮宽度 */
+  }
+  
+  /* 按钮悬停样式 */
+  .buttonSection button:hover {
+    background-color: #0056b3;
+  }
+  /* 调整屏幕较小时的布局 */
+@media (max-width: 768px) {
+  .buttonSection {
+    max-width: 100%; /* 允许宽度随屏幕变化 */
+    padding: 0 20px; /* 添加左右内边距 */
+  }
+
+  .buttonSection button {
+    width: calc(50% - 20px); /* 按钮宽度为50%，减去间距 */
+    margin-bottom: 10px; /* 增加按钮之间的垂直间距 */
+  }
+}
+
+/* 更小屏幕时的进一步调整 */
+@media (max-width: 480px) {
+  .buttonSection button {
+    width: 100%; /* 按钮占满整个屏幕宽度 */
+    margin: 0; /* 去除垂直间距 */
+  }
+}

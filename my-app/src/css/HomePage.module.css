@@ -1,0 +1,39 @@
+/* src/components/HomePage.module.css */
+
+
+/* Container styles */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 10px;
+  margin-top: 0px;
+  text-align: center;
+  background-color: #f9f9f9; /* 背景颜色，增加对比度 */
+  border-radius: 8px; /* 边角圆润 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 轻微阴影效果 */
+}
+
+/* src/components/HomePage.module.css */
+
+/* Title styles */
+.title {
+  font-family: 'Times New Roman', serif; /* 使用 !important 确保字体大小优先 */
+  font-weight: bold !important; /* 使用 !important 确保字体加粗 */
+  color: #333 !important; /* 使用 !important 确保颜色设置 */
+  margin-bottom: 20px !important; /* 使用 !important 确保底部间距 */
+
+  font-size: 23px !important;
+}
+
+/* 样式 for .intro */
+.intro, .experience, .community, .conclusion {
+  font-family: 'Times New Roman', serif;
+  font-size: 18px; /* 适中的字体大小 */
+  color: #333; /* 深色字体更易阅读 */
+  line-height: 1.6; /* 增加行高，改善可读性 */
+  margin-bottom: 30px; /* 增加与按钮之间的距离 */
+  text-align: left; /* 居中对齐 */
+  max-width: 900px; /* 最大宽度，保持内容整洁 */
+  margin: 0 auto; /* 居中对齐 */
+  padding: 0 20px; /* 内边距，避免内容过于紧凑 */
+}

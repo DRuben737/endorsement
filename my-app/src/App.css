@@ -1,0 +1,226 @@
+.App {
+  text-align: center;
+}
+
+/* 动态效果 */
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.App h1 {
+  font-size: 3rem; /* 你可以根据需要调整这个值 */
+  font-weight: bold;
+  background: linear-gradient(45deg,#FF0000,#FF7F00,#FFFF00,#00FF00,#00FFFF,#0000FF,#8B00FF,#FF0000);
+  background-size: 400% 400%;
+  color: transparent; /* 使文字颜色透明，以显示背景渐变 */
+  -webkit-background-clip: text; /* 使背景渐变应用到文字上 */
+  background-clip: text; /* 支持现代浏览器 */
+  animation: gradientAnimation 5s ease infinite; /* 动画效果 */
+  margin: 20px 0; /* 上下边距 */
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+input {
+  margin: 10px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  color: white;
+  background-color: #61dafb;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #21a1f1;
+}
+
+select {
+  margin: 10px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Modal Styles */
+.Modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 4px;
+  max-width: 800px; /* 增加弹出窗口的最大宽度 */
+  width: 100%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.Overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.ModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1001;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.ModalTitle {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.ButtonGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.CloseButton {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.TemplateList {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px; /* 调整列间距 */
+}
+
+.TemplateItem {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-sizing: border-box; /* 确保内边距和边框包含在宽度内 */
+  width: 100%; /* 使模板项宽度适应列宽 */
+}
+
+.TemplateItem:hover,
+.TemplateItem.selected {
+  background-color: #e0e0e0;
+}
+
+.ConfirmButton {
+  padding: 10px 20px;
+  font-size: 16px;
+  color: white;
+  background-color: #61dafb;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ConfirmButton:hover {
+  background-color: #21a1f1;
+}
+
+.title-container {
+  display: inline-flex;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
+}
+
+.logo {
+  width: 50px;
+  height: auto;
+  margin-left: 10px;
+}
+
+nav {
+  margin-bottom: 40px; /* 增加导航栏和下面内容的间距 */
+  padding: 10px; /* 内边距 */
+  margin-top: 20px;
+
+}
+
+/* 保持桌面端样式 */
+nav a {
+  text-decoration: none;
+  color: #61dafb;
+  padding: 10px 20px;
+  margin: 0 10px;
+  background-color: #282c34;
+  border-radius: 4px;
+  transition: background-color 0.3s, transform 0.3s;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* 当屏幕宽度小于768px时，调整导航栏样式 */
+@media (max-width: 768px) {
+  nav {
+    display: flex;
+    flex-direction: column; /* 导航按钮垂直排列 */
+    align-items: center;
+  }
+
+  nav a {
+    width: 100%; /* 导航按钮宽度占满 */
+    text-align: center;
+    margin: 5px 0; /* 调整按钮之间的间距 */
+    padding: 15px 10px; /* 增加按钮的点击区域 */
+    font-size: 14px; /* 调整字体大小 */
+  }
+}
+
+/* 更小屏幕下进一步调整 */
+@media (max-width: 480px) {
+  nav a {
+    font-size: 12px; /* 进一步缩小字体 */
+    padding: 12px 5px; /* 减少内边距 */
+  }
+}
+
+
+nav a:hover {
+  background-color: #21a1f1;
+  transform: scale(1.1);
+}
+
+nav a:active {
+  background-color: #1e90ff;
+}
