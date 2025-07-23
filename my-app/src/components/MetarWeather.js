@@ -9,16 +9,19 @@ function MetarWeather() {
     try {
       const correctedIcao = icaoCode.length === 3 ? `K${icaoCode.toUpperCase()}` : icaoCode.toUpperCase();
       const corsProxy = 'https://corsproxy.io/?';
-      const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${correctedIcao}&format=json&taf=true&hours=1`;
+      const apiUrl = `https://aviationweather.gov/cgi-bin/data/metar.php?ids=${correctedIcao}&format=raw&hours=0&taf=on`;
       const response = await fetch(`${corsProxy}${encodeURIComponent(apiUrl)}`, {
         headers: { 'accept': '*/*' },
       });
 
       if (!response.ok) throw new Error('Network response was not ok');
 
-      const data = await response.json();
-      const metar = data.metars?.[0]?.raw_text || 'No METAR found.';
-      const taf = data.tafs?.[0]?.raw_text || 'No TAF found.';
+      const text = await response.text();
+      const metarMatch = text.match(/METAR (.*?)\n/);
+      const tafMatch = text.match(/TAF(.*?)\n/);
+
+      const metar = metarMatch ? 'METAR ' + metarMatch[1].trim() : 'No METAR found.';
+      const taf = tafMatch ? 'TAF' + tafMatch[1].trim() : 'No TAF found.';
 
       setMetarData({ metar, taf });
       setError(null);
