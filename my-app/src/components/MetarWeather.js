@@ -7,14 +7,13 @@ function MetarWeather() {
 
   const fetchMetarData = async () => {
     try {
-      const response = await fetch(
-        `https://aviationweather.gov/api/data/metar?ids=${icaoCode.toUpperCase()}&format=json&taf=true&hours=1`,
-        {
-          headers: {
-            'accept': '*/*',
-          },
-        }
-      );
+      const corsProxy = 'https://corsproxy.io/?';
+      const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${icaoCode.toUpperCase()}&format=json&taf=true&hours=1`;
+      const response = await fetch(`${corsProxy}${encodeURIComponent(apiUrl)}`, {
+        headers: {
+          'accept': '*/*',
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
