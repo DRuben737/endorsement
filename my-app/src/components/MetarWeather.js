@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet';
 
 function MetarWeather() {
   const [icaoCode, setIcaoCode] = useState(''); // 用于存储用户输入的ICAO代码
   const [metarData, setMetarData] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchMetarData = async () => {
+    setLoading(true);
     try {
       const correctedIcao = icaoCode.length === 3 ? `K${icaoCode.toUpperCase()}` : icaoCode.toUpperCase();
       const corsProxy = 'https://corsproxy.io/?';
@@ -28,11 +31,16 @@ function MetarWeather() {
     } catch (err) {
       setError(err.message);
       setMetarData(null);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="metar-weather">
+      <Helmet>
+        <title>METAR Weather | Pilot Seal</title>
+      </Helmet>
       <h2>METAR Weather Information</h2>
       
       <input
@@ -42,6 +50,8 @@ function MetarWeather() {
         onChange={(e) => setIcaoCode(e.target.value)} // 更新ICAO代码的状态
       />
       <button onClick={fetchMetarData}>Get METAR</button>
+
+      {loading && <p>Loading...</p>}
       
       {error && <p style={{ color: 'red' }}>{error}</p>}
       
