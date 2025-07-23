@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet';
 
 function MetarWeather() {
   const [icaoCode, setIcaoCode] = useState(''); // 用于存储用户输入的ICAO代码
@@ -38,9 +37,6 @@ function MetarWeather() {
 
   return (
     <div className="metar-weather">
-      <Helmet>
-        <title>METAR Weather | Pilot Seal</title>
-      </Helmet>
       <h2>METAR Weather Information</h2>
       
       <input
