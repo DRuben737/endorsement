@@ -8,20 +8,23 @@ function MetarWeather() {
   const fetchMetarData = async () => {
     try {
       const response = await fetch(
-        `https://cors-anywhere.herokuapp.com/https://aviationweather.gov/api/data/metar?ids=${icaoCode}&format=json&taf=true&hours=3`,
+        `https://aviationweather.gov/api/data/metar?ids=${icaoCode.toUpperCase()}&format=json&taf=true&hours=1`,
         {
           headers: {
             'accept': '*/*',
           },
         }
       );
-  
+
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-  
+
       const data = await response.json();
-      setMetarData(data);
+      const metar = data.metars ? data.metars[0]?.raw_text || 'No METAR found.' : 'No METAR found.';
+      const taf = data.tafs ? data.tafs[0]?.raw_text || 'No TAF found.' : 'No TAF found.';
+      
+      setMetarData({ metar, taf });
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -45,8 +48,10 @@ function MetarWeather() {
       
       {metarData && (
         <div>
-          <h3>METAR Data</h3>
-          <pre>{JSON.stringify(metarData, null, 2)}</pre>
+          <h3>METAR</h3>
+          <pre>{metarData.metar}</pre>
+          <h3>TAF</h3>
+          <pre>{metarData.taf}</pre>
         </div>
       )}
     </div>
