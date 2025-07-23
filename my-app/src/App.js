@@ -24,7 +24,6 @@ function App() {
           <Link to="/weight-and-balance">Weight and Balance</Link> | 
           <Link to="/endorsement-generator">Generate Endorsement</Link> |  {/* 新增链接 */}
           <Link to="/metar-weather">METAR Weather</Link>
-          <a href="https://chat.pilotseal.com" target="_blank" rel="noopener noreferrer">Pilot Chat</a>
         </nav>
         <Routes>
           <Route path="/" element={<HomePage />} />  {/* 主页路由 */}

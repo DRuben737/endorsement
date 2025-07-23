@@ -7,22 +7,19 @@ function MetarWeather() {
 
   const fetchMetarData = async () => {
     try {
+      const correctedIcao = icaoCode.length === 3 ? `K${icaoCode.toUpperCase()}` : icaoCode.toUpperCase();
       const corsProxy = 'https://corsproxy.io/?';
-      const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${icaoCode.toUpperCase()}&format=json&taf=true&hours=1`;
+      const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${correctedIcao}&format=json&taf=true&hours=1`;
       const response = await fetch(`${corsProxy}${encodeURIComponent(apiUrl)}`, {
-        headers: {
-          'accept': '*/*',
-        },
+        headers: { 'accept': '*/*' },
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      if (!response.ok) throw new Error('Network response was not ok');
 
       const data = await response.json();
-      const metar = data.metars ? data.metars[0]?.raw_text || 'No METAR found.' : 'No METAR found.';
-      const taf = data.tafs ? data.tafs[0]?.raw_text || 'No TAF found.' : 'No TAF found.';
-      
+      const metar = data.metars?.[0]?.raw_text || 'No METAR found.';
+      const taf = data.tafs?.[0]?.raw_text || 'No TAF found.';
+
       setMetarData({ metar, taf });
       setError(null);
     } catch (err) {
