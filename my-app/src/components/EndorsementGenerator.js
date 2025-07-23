@@ -123,7 +123,8 @@ function EndorsementGenerator() {
         });
   
         // Draw the text inside the box
-        lines.forEach((line) => {
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
           page.drawText(line, {
             x: margin,
             y: currentY - lineHeight,
@@ -132,7 +133,7 @@ function EndorsementGenerator() {
             maxWidth: maxWidth,
           });
           currentY -= lineHeight;
-        });
+        }
   
         currentY -= lineHeight + boxPadding; // Add extra space between templates
       }
