@@ -79,7 +79,7 @@ Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
 "Endorsement of U.S. citizenship recommended by the Transportation Security  Administration (TSA)":`
-I certify that {studentName} {studentCertNumber} has presented me a ______(U.S. birth certificate or U.S. passport) and ____________(the relevant control or sequential number on the document, if any) establishing that {studentName} is a U.S. citizen or national in accordance with 49 CFR § 1552.3(h).  
+I certify that {studentName} {studentCertNumber} has presented me a ____________(U.S. birth certificate or U.S. passport) and ______________(the relevant control or sequential number on the document, if any) establishing that {studentName} is a U.S. citizen or national in accordance with 49 CFR § 1552.3(h).  
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
@@ -186,7 +186,7 @@ Date: {date}          Signature:_____________
 
  
 "R-22/R-44 awareness training":` 
-I certify that  {studentName} {studentCertNumber} has received the Awareness Training required by SFAR 73, section 2(a)(3)(i–v).  
+I certify that  {studentName} {studentCertNumber} has received the Awareness Training required by SFAR 73, section 2(a)(3)(i)–(v).  
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
@@ -200,18 +200,18 @@ I certify that  {studentName} {studentCertNumber} has been given  training speci
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
-"Flight review in an R-22 helicopter":`  
+"Flight review in an R-22":`  
 I certify that  {studentName} {studentCertNumber} has satisfactorily  completed the flight review in an R-22 required by § 61.56 and SFAR 73, section 2(c)(1)  and (3), on {date} 
 Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
 "R-44 solo endorsement":` 
-I certify that  {studentName} {studentCertNumber} meets the experience requirements of SFAR 73, section 2(b)(4) and has been given training  specified by SFAR 73, section 2(b)(4)(i–iv). {studentName} has been found proficient to solo the R-44 helicopter.  
+I certify that  {studentName} {studentCertNumber} meets the experience requirements of SFAR 73, section 2(b)(4) and has been given training specified by SFAR 73, section 2(b)(4)(i)–(iv). They have been found proficient to solo the R-44 helicopter.  
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
 "R-44 pilot-in-command endorsement":` 
-I certify that  {studentName} {studentCertNumber} has been given training specified by SFAR 73, section 2(b)(2)(ii)(A–D) for Robinson R-44 helicopters  and is proficient to act as pilot in command. An annual flight review must be completed  by (date 12 calendar-months after date of this endorsement) unless the requirements of  SFAR 73, section 2(b)(2)(i) are met.  
+I certify that  {studentName} {studentCertNumber} has been given training specified by SFAR 73, section 2(b)(2)(ii)(A–D) for Robinson R-44 helicopters  and is proficient to act as pilot in command. An annual flight review must be completed  by _________________(date 12 calendar-months after this endorsement) unless the requirements of  SFAR 73, section 2(b)(2)(i) are met.  
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
@@ -221,7 +221,7 @@ Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
 "Completion of a flight review":` 
-I certify that  {studentName} {studentCertNumber} , has satisfactorily completed a flight review of § 61.56(a) on (date). 
+I certify that  {studentName} {studentCertNumber} , has satisfactorily completed a flight review of § 61.56(a) on {date} . 
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
@@ -251,15 +251,15 @@ Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
 "To act as pilot in command of an aircraft in solo operations when the pilot does not  hold an appropriate category/class rating":` 
-I certify that {studentName} {studentCertNumber} has received the training as required by  § 61.31(d)(2) to serve as a pilot in command in a (specific category and class) of aircraft. I have determined that {studentName} is prepared to solo that __________ aircraft.  Limitations:___________. `,
+I certify that {studentName} {studentCertNumber} has received the training as required by  § 61.31(d)(2) to serve as a pilot in command in a (specific category and class) of aircraft. I have determined that {studentName} is prepared to solo that __________ aircraft.  Limitations:_______________. `,
 
-"Retesting of a knowledge":`
-I certify that {studentName} {studentCertNumber} has received the additional ground training as required by § 61.49. I have determined that {studentName}  is proficient to pass the			 knowledge.  
+"Retesting of a knowledge test":`
+I certify that {studentName} {studentCertNumber} has received the additional ground training as required by § 61.49. I have determined that {studentName}  is proficient to pass the_______________knowledge.  
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
 "Retesting of checkride":`
-I certify that {studentName} {studentCertNumber} has received the additional flight training as required by § 61.49. I have determined that {studentName}  is proficient to pass the			 practical test.  
+I certify that {studentName} {studentCertNumber} has received the additional flight training as required by § 61.49. I have determined that {studentName}  is proficient to pass the________________practical test.  
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
@@ -270,6 +270,11 @@ Date: {date}          Signature:_____________
 
 "Night vision goggle endorsement": `
 I certify that {studentName} {studentCertNumber} has received the required training in the use of night vision goggles as specified in § 61.31(j) and is proficient to operate an __________(Category and class) using such equipment.
+Date: {date}          Signature:_____________
+{instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
+
+ "Ground Instructor Recency": `
+I certify that {studentName} {studentCertNumber}  has demonstrated knowledge in the subject areas prescribed for a [basic, advanced, instrument] ground instructor under § 61.213(a)(3) and (a)(4), as appropriate.
 Date: {date}          Signature:_____________
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
