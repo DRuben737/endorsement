@@ -1,10 +1,11 @@
 const fetch = require('node-fetch');
+const { parseStringPromise } = require('xml2js');
 
 exports.handler = async (event) => {
   const icaoRaw = event.queryStringParameters.icao || '';
   const icao = icaoRaw.length === 3 ? `K${icaoRaw.toUpperCase()}` : icaoRaw.toUpperCase();
 
-  const url = `https://aviationweather.gov/cgi-bin/data/metar.php?ids=${icao}&format=raw&hours=0&taf=on`;
+  const url = `https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=${icao}&hoursBeforeNow=1`;
 
   try {
     const response = await fetch(url, {
@@ -13,28 +14,20 @@ exports.handler = async (event) => {
       }
     });
 
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('text/plain')) {
-      throw new Error('Unexpected content type: ' + contentType);
-    }
+    const xml = await response.text();
+    const result = await parseStringPromise(xml);
 
-    const text = await response.text();
+    const metarData = result.response.data[0].METAR?.[0];
+    const metar = metarData?.raw_text?.[0] || 'No METAR found.';
 
-    const lines = text.split('\n');
-    let metar = 'No METAR found.';
-    let taf = 'No TAF found.';
-
-    for (const line of lines) {
-      if (line.startsWith('METAR')) metar = line.trim();
-      if (line.startsWith('TAF')) taf = line.trim();
-    }
+    // TAF is not available via this endpoint — recommend adding separate request if needed
 
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ metar, taf }),
+      body: JSON.stringify({ metar, taf: 'TAF not available via FAA METAR feed.' }),
     };
   } catch (error) {
     return {
