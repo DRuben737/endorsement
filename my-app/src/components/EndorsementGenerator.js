@@ -85,15 +85,13 @@ function EndorsementGenerator() {
       const boxWidth = 280;
       const boxPadding = 5; // Padding between text and box
 
-      // 2x2 grid layout
+      // 2-column layout, dynamic row count per page
       let x = margin;
       let y = height - margin;
       const columns = 2;
-      const rows = 2;
       const boxSpacingX = 20;
       const boxSpacingY = 20;
       let col = 0;
-      let row = 0;
 
       for (const templateKey of selectedTemplates) {
         let content = templates[templateKey];
@@ -110,18 +108,20 @@ function EndorsementGenerator() {
         const textHeight = lines.length * lineHeight;
         const boxHeight = textHeight + 0.9 * boxPadding;
 
-        if (row >= rows) {
-          page = doc.addPage([612, 792]);
-          row = 0;
-          col = 0;
-        }
-
         // Center the two-column layout
         const pageWidth = 612;
         const totalBoxWidth = columns * boxWidth + (columns - 1) * boxSpacingX;
         const horizontalOffset = (pageWidth - totalBoxWidth) / 2;
+
+        // Check if adding this box would exceed the page bottom
+        const willExceedPage = y - (boxHeight + boxSpacingY) < margin;
+        if (willExceedPage || (col >= columns)) {
+          page = doc.addPage([612, 792]);
+          y = height - margin;
+          col = 0;
+        }
+
         x = horizontalOffset + col * (boxWidth + boxSpacingX);
-        y = height - margin - row * (boxHeight + boxSpacingY);
 
         page.drawRectangle({
           x: x - boxPadding,
@@ -146,7 +146,7 @@ function EndorsementGenerator() {
         col++;
         if (col >= columns) {
           col = 0;
-          row++;
+          y -= (boxHeight + boxSpacingY);
         }
       }
   
