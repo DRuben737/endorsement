@@ -1,11 +1,17 @@
 // src/components/Logbook.js
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Logbook = () => {
   return (
     <div>
       <h1>Logbook</h1>
-      <p>I have a logbook on Google Sheets version. <a href="https://docs.google.com/spreadsheets/d/1JHpRj1v-_m8v87uoEquaGIc_PHggjRqgib3-y0xZctU/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Click to view</a>.</p>
+      <p>
+        Check here for Logbook：
+        <a href="https://logbook.pilotseal.com" target="_blank" rel="noopener noreferrer">
+          Logbook
+        </a>
+      </p>
     </div>
   );
 };
