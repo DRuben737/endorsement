@@ -79,10 +79,10 @@ function EndorsementGenerator() {
       let page = doc.addPage([612, 792]); // 8.5 x 11 inches
       const { height } = page.getSize();
       const font = await doc.embedFont(StandardFonts.Helvetica);
-      const fontSize = 8;
-      const margin = 50;
-      const maxWidth = 288; // 4 inches in points
-      const boxWidth = 295; // Box width (slightly more than text width)
+      const fontSize = 7;
+      const margin = 30;
+      const maxWidth = 270;
+      const boxWidth = 280;
       const boxPadding = 5; // Padding between text and box
 
       // 2x2 grid layout
@@ -106,7 +106,7 @@ function EndorsementGenerator() {
           .replace(/{instructorCertExpDate}/g, instructorCertExpDate);
         content = sanitizeText(content);
         const lines = splitTextIntoLines(content, font, fontSize, maxWidth);
-        const lineHeight = 1.2 * fontSize;
+        const lineHeight = 1.15 * fontSize;
         const textHeight = lines.length * lineHeight;
         const boxHeight = textHeight + 0.9 * boxPadding;
 
@@ -116,7 +116,11 @@ function EndorsementGenerator() {
           col = 0;
         }
 
-        x = margin + col * (boxWidth + boxSpacingX);
+        // Center the two-column layout
+        const pageWidth = 612;
+        const totalBoxWidth = columns * boxWidth + (columns - 1) * boxSpacingX;
+        const horizontalOffset = (pageWidth - totalBoxWidth) / 2;
+        x = horizontalOffset + col * (boxWidth + boxSpacingX);
         y = height - margin - row * (boxHeight + boxSpacingY);
 
         page.drawRectangle({
