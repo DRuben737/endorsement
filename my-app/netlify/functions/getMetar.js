@@ -9,28 +9,31 @@ exports.handler = async (event) => {
   const icaoRaw = event.queryStringParameters.icao || '';
   const icao = icaoRaw.length === 3 ? `K${icaoRaw.toUpperCase()}` : icaoRaw.toUpperCase();
 
-  const url = `https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=${icao}&hoursBeforeNow=1`;
+  // METAR URL
+  const metarUrl = `https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=${icao}&hoursBeforeNow=1`;
+
+  // TAF URL
+  const tafUrl = `https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=tafs&requestType=retrieve&format=xml&stationString=${icao}&hoursBeforeNow=1`;
 
   try {
-    const response = await fetch(url);
-    const xml = await response.text();
+    // Fetch METAR
+    const metarResponse = await fetch(metarUrl);
+    const metarXml = await metarResponse.text();
+    const metarResult = await xml2js.parseStringPromise(metarXml, { mergeAttrs: true });
+    const metars = metarResult.response?.data?.[0]?.METAR;
+    const metar = metars?.[0]?.raw_text?.[0] || 'No METAR data found.';
 
-    const result = await xml2js.parseStringPromise(xml, { mergeAttrs: true });
-    const metars = result.response?.data?.[0]?.METAR;
-    const metar = metars?.[0]?.raw_text?.[0];
-
-    if (!metar) {
-      return {
-        statusCode: 404,
-        headers: defaultHeaders,
-        body: JSON.stringify({ error: 'No METAR data found.' }),
-      };
-    }
+    // Fetch TAF
+    const tafResponse = await fetch(tafUrl);
+    const tafXml = await tafResponse.text();
+    const tafResult = await xml2js.parseStringPromise(tafXml, { mergeAttrs: true });
+    const tafs = tafResult.response?.data?.[0]?.TAF;
+    const taf = tafs?.[0]?.raw_text?.[0] || 'No TAF data found.';
 
     return {
       statusCode: 200,
       headers: defaultHeaders,
-      body: JSON.stringify({ metar }),
+      body: JSON.stringify({ metar, taf }),
     };
   } catch (error) {
     return {
