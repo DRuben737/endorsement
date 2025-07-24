@@ -7,12 +7,18 @@ function MetarWeather() {
   const [loading, setLoading] = useState(false);
 
   const fetchMetarData = async () => {
+    const trimmed = icaoCode.trim().toUpperCase();
+    if (!/^[A-Z]{3,4}$/.test(trimmed)) {
+      setError('Please enter a valid 3- or 4-letter ICAO code.');
+      return;
+    }
+
     setLoading(true);
     setMetarData(null);
     setError(null);
 
     try {
-      const response = await fetch(`/.netlify/functions/getMetar?icao=${icaoCode}`);
+      const response = await fetch(`/.netlify/functions/getMetar?icao=${trimmed}`);
       const data = await response.json();
 
       if (data.error) throw new Error(data.error);
@@ -30,14 +36,15 @@ function MetarWeather() {
       <h2>METAR &amp; TAF Weather Information</h2>
       <input
         type="text"
-        placeholder="Enter ICAO Code (e.g., KPDX)"
+        placeholder="Enter ICAO Code (e.g., PDX or KPDX)"
         value={icaoCode}
-        onChange={(e) => setIcaoCode(e.target.value)}
+        onChange={(e) => setIcaoCode(e.target.value.toUpperCase())}
       />
       <button onClick={fetchMetarData}>Get Weather</button>
 
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
+      {!loading && !error && !metarData && <p>Please enter an ICAO code above.</p>}
       {metarData && (
         <div>
           <h3>METAR</h3>
