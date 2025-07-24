@@ -79,13 +79,22 @@ function EndorsementGenerator() {
       let page = doc.addPage([612, 792]); // 8.5 x 11 inches
       const { height } = page.getSize();
       const font = await doc.embedFont(StandardFonts.Helvetica);
-      const fontSize = 10;
+      const fontSize = 8;
       const margin = 50;
       const maxWidth = 288; // 4 inches in points
       const boxWidth = 295; // Box width (slightly more than text width)
       const boxPadding = 5; // Padding between text and box
-      let currentY = height - margin; // Start from the top of the page
-  
+
+      // 2x2 grid layout
+      let x = margin;
+      let y = height - margin;
+      const columns = 2;
+      const rows = 2;
+      const boxSpacingX = 20;
+      const boxSpacingY = 20;
+      let col = 0;
+      let row = 0;
+
       for (const templateKey of selectedTemplates) {
         let content = templates[templateKey];
         content = content
@@ -95,47 +104,46 @@ function EndorsementGenerator() {
           .replace(/{instructorName}/g, instructorName)
           .replace(/{instructorCertNumber}/g, instructorCertNumber)
           .replace(/{instructorCertExpDate}/g, instructorCertExpDate);
-  
-        // Sanitize content
         content = sanitizeText(content);
-  
         const lines = splitTextIntoLines(content, font, fontSize, maxWidth);
         const lineHeight = 1.2 * fontSize;
         const textHeight = lines.length * lineHeight;
-  
-        // Calculate box height
         const boxHeight = textHeight + 0.9 * boxPadding;
-  
-        if (currentY - boxHeight < margin) {
-          // Add a new page if current page is full
+
+        if (row >= rows) {
           page = doc.addPage([612, 792]);
-          currentY = height - margin;
+          row = 0;
+          col = 0;
         }
-  
-        // Draw the black border box
+
+        x = margin + col * (boxWidth + boxSpacingX);
+        y = height - margin - row * (boxHeight + boxSpacingY);
+
         page.drawRectangle({
-          x: margin - boxPadding,
-          y: currentY - boxHeight - boxPadding,
+          x: x - boxPadding,
+          y: y - boxHeight - boxPadding,
           width: boxWidth,
           height: boxHeight,
           borderColor: rgb(0, 0, 0),
-          borderWidth: 1, // Black border
+          borderWidth: 1,
         });
-  
-        // Draw the text inside the box
+
+        let textY = y;
         for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          page.drawText(line, {
-            x: margin,
-            y: currentY - lineHeight,
+          page.drawText(lines[i], {
+            x: x,
+            y: textY - lineHeight,
             size: fontSize,
             font: font,
-            maxWidth: maxWidth,
           });
-          currentY -= lineHeight;
+          textY -= lineHeight;
         }
-  
-        currentY -= lineHeight + boxPadding; // Add extra space between templates
+
+        col++;
+        if (col >= columns) {
+          col = 0;
+          row++;
+        }
       }
   
       const pdfBytes = await doc.save();
