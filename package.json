@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "file-saver": "^2.0.5",
-    "pdf-lib": "^1.17.1"
+    "node-fetch": "^3.3.2",
+    "pdf-lib": "^1.17.1",
+    "xml2js": "^0.6.2"
   }
 }
