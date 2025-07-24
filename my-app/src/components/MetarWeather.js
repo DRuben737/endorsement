@@ -12,26 +12,12 @@ function MetarWeather() {
     setError(null);
 
     try {
-      const correctedIcao = icaoCode.length === 3 ? `K${icaoCode.toUpperCase()}` : icaoCode.toUpperCase();
-      const url = `https://aviationweather.gov/cgi-bin/data/metar.php?ids=${correctedIcao}&format=raw&hours=0&taf=on`;
+      const response = await fetch(`/.netlify/functions/getMetar?icao=${icaoCode}`);
+      const data = await response.json();
 
-      const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, {
-        headers: { 'Accept': '*/*' },
-      });
+      if (data.error) throw new Error(data.error);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch METAR/TAF data');
-      }
-
-      const text = await response.text();
-
-      const metarMatch = text.match(/(?:^|\n)METAR\s+(.*?)(?=\n|$)/);
-      const tafMatch = text.match(/(?:^|\n)TAF\s+(.*?)(?=\n|$)/);
-
-      const metar = metarMatch ? `METAR ${metarMatch[1].trim()}` : 'No METAR found.';
-      const taf = tafMatch ? `TAF ${tafMatch[1].trim()}` : 'No TAF found.';
-
-      setMetarData({ metar, taf });
+      setMetarData({ metar: data.metar, taf: data.taf });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -41,14 +27,14 @@ function MetarWeather() {
 
   return (
     <div className="metar-weather">
-      <h2>METAR Weather Information</h2>
+      <h2>METAR &amp; TAF Weather Information</h2>
       <input
         type="text"
-        placeholder="Enter ICAO Code"
+        placeholder="Enter ICAO Code (e.g., KPDX)"
         value={icaoCode}
         onChange={(e) => setIcaoCode(e.target.value)}
       />
-      <button onClick={fetchMetarData}>Get METAR</button>
+      <button onClick={fetchMetarData}>Get Weather</button>
 
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
