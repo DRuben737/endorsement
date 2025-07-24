@@ -7,7 +7,17 @@ exports.handler = async (event) => {
   const url = `https://aviationweather.gov/cgi-bin/data/metar.php?ids=${icao}&format=raw&hours=0&taf=on`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MetarFetcher/1.0)'
+      }
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('text/plain')) {
+      throw new Error('Unexpected content type: ' + contentType);
+    }
+
     const text = await response.text();
 
     const lines = text.split('\n');
@@ -22,7 +32,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*', // 为前端调试提供 CORS 支持
+        'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify({ metar, taf }),
     };
