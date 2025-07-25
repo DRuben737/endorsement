@@ -38,3 +38,13 @@
   margin: 0 auto; /* 居中对齐 */
   padding: 0 40px; /* 内边距，避免内容过于紧凑 */
 }
+/* 简洁风格的 tagline */
+.minimalTagline {
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #444;
+  font-family: 'Segoe UI', sans-serif;
+}

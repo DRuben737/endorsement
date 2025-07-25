@@ -6,8 +6,10 @@ const HomePage = () => {
   return (
     <div className={styles.container}>
       <section className={styles.hero}>
-        <h1>Welcome to PilotSeal Endorsement Tool</h1>
-        <p className={styles.tagline}>Streamline your FAA endorsements – fast, compliant, and hassle-free.</p>
+        <p>
+          <a href="/logbook">Go to Logbook</a>
+        </p>
+        <p className={styles.minimalTagline}>Your toolkit for efficient and compliant FAA endorsements.</p>
       </section>
 
       <section className={styles.introSection}>
