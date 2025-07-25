@@ -23,6 +23,12 @@ const HomePage = () => {
         </p>
       </section>
 
+      <section className={styles.introSection}>
+        <p className={styles.authorNote}>
+          👨‍✈️ Created by <a href="https://ruben.pilotseal.com" target="_blank" rel="noopener noreferrer">Ruben</a> – check out his work and aviation insights.
+        </p>
+      </section>
+
       <section className={styles.features}>
         <div className={styles.featureCard}>
           <h3>Logbook</h3>
@@ -39,12 +45,6 @@ const HomePage = () => {
           <p>Generate accurate FAA-compliant endorsements.</p>
           <a href="/endorsements">Generate Now</a>
         </div>
-      </section>
-
-      <section className={styles.authorLink}>
-        <a href="https://ruben.pilotseal.com" target="_blank" rel="noopener noreferrer">
-          👨‍✈️ Learn more about the creator
-        </a>
       </section>
     </div>
   );
