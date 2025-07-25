@@ -6,9 +6,6 @@ const HomePage = () => {
   return (
     <div className={styles.container}>
       <section className={styles.hero}>
-        <p>
-          <a href="/logbook">Go to Logbook</a>
-        </p>
         <p className={styles.minimalTagline}>Your toolkit for efficient and compliant FAA endorsements.</p>
       </section>
 

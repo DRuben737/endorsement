@@ -1,14 +1,13 @@
 // src/components/Logbook.js
 
 const Logbook = () => {
+  const handleRedirect = () => {
+    window.location.href = "https://logbook.pilotseal.com";
+  };
+
   return (
     <div>
-      <p>
-        Check here for Logbook：
-        <a href="https://logbook.pilotseal.com" target="_blank" rel="noopener noreferrer">
-          Logbook
-        </a>
-      </p>
+      <button onClick={handleRedirect}>Go to Logbook</button>
     </div>
   );
 };
