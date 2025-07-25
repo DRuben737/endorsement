@@ -1,4 +1,3 @@
-
 // src/components/HomePage.js
 import React from 'react';
 import styles from '../css/HomePage.module.css'; // 导入 CSS 模块
@@ -6,20 +5,47 @@ import styles from '../css/HomePage.module.css'; // 导入 CSS 模块
 const HomePage = () => {
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Welcome!</h1>
-      <p className={styles.intro}>
-          This site is not just a tool; it's a labor of love. It began with a simple frustration: printing endorsements was a hassle. I wanted to find a way to make it easier, so I created a solution that helps everyone in aviation—students, instructors, and enthusiasts alike.
-      </p>
-      <p className={styles.experience}>
-          As I built and refined this tool, it became more than just a time-saver. It's now an integral part of my daily routine and a resource I hope will benefit you too. I've connected it with my own spreadsheets, aiming to provide features that truly help you in your aviation journey.
-      </p>
-      <p className={styles.community}>
-          The Pilotchat community is currently in testing, with space for just 20 users at this stage. It's a chance to be part of something new, something that aims to make a real difference in the way we handle endorsements.
-      </p>
-      <p className={styles.conclusion}>
-          I'm thrilled to share this with you and excited about the possibilities ahead. Thank you for being part of this adventure!
-      </p>
-      <p className={styles.conclusion}>Navigate to the Logbook, Weight and Balance, or Generate Endorsement pages using the links above.</p>
+      <section className={styles.hero}>
+        <h1>Welcome to PilotSeal Endorsement Tool</h1>
+        <p>Smart. Compliant. Efficient.</p>
+        <a href="/logbook" className={styles.ctaButton}>Get Started</a>
+      </section>
+
+      <section className={styles.introSection}>
+        <p className={styles.intro}>
+          This platform was built to eliminate the hassle of generating FAA endorsements. Designed for flight instructors, students, and aviation enthusiasts, it streamlines the endorsement process and ensures compliance with Part 61.
+        </p>
+        <p className={styles.experience}>
+          Integrated with practical tools and optimized for daily use, it offers flexibility, precision, and ease of access—whether you're preparing for a lesson or documenting progress.
+        </p>
+        <p className={styles.conclusion}>
+          Explore the Logbook, Weight and Balance, and Endorsement Generator using the navigation links above.
+        </p>
+      </section>
+
+      <section className={styles.features}>
+        <div className={styles.featureCard}>
+          <h3>Logbook</h3>
+          <p>Record and track your flight history with ease.</p>
+          <a href="/logbook">Open Logbook</a>
+        </div>
+        <div className={styles.featureCard}>
+          <h3>Weight & Balance</h3>
+          <p>Calculate aircraft load and performance instantly.</p>
+          <a href="/w-and-b">Try W&amp;B Tool</a>
+        </div>
+        <div className={styles.featureCard}>
+          <h3>Endorsement Generator</h3>
+          <p>Generate accurate FAA-compliant endorsements.</p>
+          <a href="/endorsements">Generate Now</a>
+        </div>
+      </section>
+
+      <section className={styles.authorLink}>
+        <a href="https://ruben.pilotseal.com" target="_blank" rel="noopener noreferrer">
+          👨‍✈️ Learn more about the creator
+        </a>
+      </section>
     </div>
   );
 };
