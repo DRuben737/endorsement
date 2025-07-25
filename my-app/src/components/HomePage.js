@@ -7,8 +7,7 @@ const HomePage = () => {
     <div className={styles.container}>
       <section className={styles.hero}>
         <h1>Welcome to PilotSeal Endorsement Tool</h1>
-        <p>Smart. Compliant. Efficient.</p>
-        <a href="/logbook" className={styles.ctaButton}>Get Started</a>
+        <p className={styles.tagline}>Streamline your FAA endorsements – fast, compliant, and hassle-free.</p>
       </section>
 
       <section className={styles.introSection}>
@@ -27,24 +26,6 @@ const HomePage = () => {
         <p className={styles.authorNote}>
           👨‍✈️ Created by <a href="https://ruben.pilotseal.com" target="_blank" rel="noopener noreferrer">Ruben</a> – check out his work and aviation insights.
         </p>
-      </section>
-
-      <section className={styles.features}>
-        <div className={styles.featureCard}>
-          <h3>Logbook</h3>
-          <p>Record and track your flight history with ease.</p>
-          <a href="/logbook">Open Logbook</a>
-        </div>
-        <div className={styles.featureCard}>
-          <h3>Weight & Balance</h3>
-          <p>Calculate aircraft load and performance instantly.</p>
-          <a href="/w-and-b">Try W&amp;B Tool</a>
-        </div>
-        <div className={styles.featureCard}>
-          <h3>Endorsement Generator</h3>
-          <p>Generate accurate FAA-compliant endorsements.</p>
-          <a href="/endorsements">Generate Now</a>
-        </div>
       </section>
     </div>
   );
