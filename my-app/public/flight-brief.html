@@ -6,8 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet" />
   <style>
-    .btn-toggle {
+    /* .btn-toggle {
       @apply px-4 py-2 rounded transition duration-200 bg-gray-200 hover:bg-gray-300;
+    } */
+    .btn-toggle {
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-radius: 0.25rem;
+      transition: background-color 0.2s;
+      background-color: #e5e7eb; /* Tailwind's bg-gray-200 */
+    }
+    .btn-toggle:hover {
+      background-color: #d1d5db; /* Tailwind's bg-gray-300 */
     }
     .btn-toggle.active {
       background-color: #2563eb; /* Tailwind's blue-600 */
@@ -145,7 +157,7 @@
       </div>
       <div>
         <label class="block font-semibold mb-1" for="flightDate">Select Date</label>
-        <input type="date" id="flightDate" class="w-full p-2 border border-gray-300 rounded" required placeholder="Select date" title="Select date" />
+        <input type="date" id="flightDate" class="w-full p-2 border border-gray-300 rounded" required placeholder="Select date" title="Select date" lang="en" />
       </div>
       <div>
         <label class="block font-semibold mb-1" for="etd">Estimated Time of Departure (ETD)</label>
@@ -185,6 +197,11 @@
         <label class="block font-semibold mb-1" for="arrival">Arrival Point</label>
         <input type="text" id="arrival" class="w-full p-2 border border-gray-300 rounded" required />
       </div>
+      <!-- Lesson Practice section inserted here -->
+      <div class="section">
+        <label for="lessonPractice"><strong>✏️ Lesson Practice</strong></label><br>
+        <input type="text" id="lessonPractice" placeholder="e.g., Steep Turns, Slow Flight, Short Field Landing" style="width: 100%; margin-top: 5px;">
+      </div>
     </form>
     <hr class="my-6" />
     <h2 class="text-xl font-bold mb-4">🌦️ Weather Information</h2>
@@ -217,6 +234,11 @@
         </button>
         <div id="daResult" class="text-sm text-gray-700 font-medium mt-2"></div>
       </div>
+    </div>
+    <!-- Notes / NOTAMs section inserted after weather information, before Weight & Balance -->
+    <div class="section">
+      <label for="weatherNotes"><strong>📝 Notes / NOTAMs</strong></label><br>
+      <textarea id="weatherNotes" rows="3" placeholder="Enter NOTAMs, ATIS, or other relevant notes here..." style="width: 100%; margin-top: 5px;"></textarea>
     </div>
     <hr class="my-6" />
     <h2 class="text-xl font-bold mb-4">⚖️ Weight & Balance</h2>
@@ -317,6 +339,11 @@
     </div>
     <div style="text-align: center; margin-top: 2rem;">
       <button id="generateReportBtn">Generate Flight Brief Report</button>
+    </div>
+    <!-- Risk Discussion / Comments section at page bottom -->
+    <div class="section">
+      <label for="riskComments"><strong>🗒️ Risk Discussion / Comments</strong></label><br>
+      <textarea id="riskComments" rows="3" placeholder="Notes from discussion with senior/chief pilot..." style="width: 100%; margin-top: 5px;"></textarea>
     </div>
   </div>
 
@@ -525,9 +552,14 @@ document.getElementById("generateReportBtn").addEventListener("click", function 
   const riskScore = document.getElementById("riskScoreValue")?.textContent || '';
   const riskCategory = document.getElementById("riskScoreLevel")?.textContent || '';
   const riskAdvice = document.getElementById("riskRecommendation")?.textContent || '';
+  const weatherNotes = document.getElementById("weatherNotes")?.value || '';
+  const lessonPractice = document.getElementById("lessonPractice")?.value || '';
+  const riskComments = document.getElementById("riskComments")?.value || '';
 
   const reportWindow = window.open("", "_blank");
-  reportWindow.document.write(`
+  // Compose the report content template literal
+  const reportContent = `
+    <!DOCTYPE html>
     <html>
       <head>
         <title>Flight Brief Report</title>
@@ -549,15 +581,20 @@ document.getElementById("generateReportBtn").addEventListener("click", function 
           <p><strong>ETE:</strong> ${ete}</p>
         </div>
         <div class="section">
-          <h2>Route</h2>
+          <h2>Route and Lesson</h2>
           <p><strong>Departure:</strong> ${dep}</p>
           <p><strong>Arrival:</strong> ${arr}</p>
           <p><strong>ETD:</strong> ${etd}</p>
           <p><strong>ETA:</strong> ${eta}</p>
+          <p><strong>Lesson Practice:</strong> ${lessonPractice}</p>
         </div>
         <div class="section">
           <h2>Weather</h2>
           <p><strong>Density Altitude:</strong> ${da}</p>
+          <div id="preview-weather-notes-section" style="margin-top: 10px;">
+            <h4>📝 Notes / NOTAMs</h4>
+            <p id="preview-weather-notes">${weatherNotes}</p>
+          </div>
         </div>
         <div class="section">
           <h2>Weight & Balance</h2>
@@ -570,9 +607,14 @@ document.getElementById("generateReportBtn").addEventListener("click", function 
           <p><strong>Category:</strong> ${riskCategory}</p>
           <p><strong>Advice:</strong> ${riskAdvice}</p>
         </div>
+        <div class="section">
+          <h2>Risk Discussion / Comments</h2>
+          <p>${riskComments}</p>
+        </div>
       </body>
     </html>
-  `);
+  `;
+  reportWindow.document.write(reportContent);
   reportWindow.document.close();
 });
 </script>
