@@ -251,9 +251,14 @@
         <label class="block font-semibold mb-1" for="fuelTime">Fuel Time (hrs)</label>
         <input type="number" id="fuelTime" class="w-full p-2 border border-gray-300 rounded" placeholder="e.g. 2.5" />
       </div>
+            <div class="mb-4">
+        <label for="estimated-flight-time" class="block text-gray-700 font-medium mb-1">Estimated Flight Time (hrs)</label>
+        <input type="number" id="estimated-flight-time" name="estimated-flight-time" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+      </div>
       <div class="flex items-center space-x-2">
-        <input type="checkbox" id="withinLimits" class="form-checkbox h-5 w-5 text-green-600" />
-        <label for="withinLimits" class="text-gray-700 font-medium">Confirmed: Within Weight & CG Limits</label>
+        <label for="withinLimitsText" class="text-gray-700 font-medium">Enter "within limits" to confirm:</label>
+        <input type="text" id="withinLimitsText" class="border rounded px-2 py-1 text-sm" placeholder="within limits" oninput="checkWithinLimits()" />
+        <span id="withinLimitsStatus" class="text-sm ml-2"></span>
       </div>
     </div>
     <hr>
@@ -331,6 +336,15 @@
     <div class="risk-item">
       <label for="dynamic-max-fuel-flight">Max fuel flight:</label>
       <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-max-fuel-flight" name="dynamic-max-fuel-flight">
+    </div>
+    <!-- 新增 Full down auto 选项 -->
+     <div class="risk-item">
+      <label for="full-down-auto">Full down auto:</label>
+      <input type="checkbox" class="dynamic-risk" value="1" id="full-down-auto" name="full-down-auto">
+    </div>
+      <div class="risk-item">
+      <label for="other-risk">Other Risks:</label>
+      <input type="number" class="dynamic-risk" name="other-risk" min="0" max="5" value="0">
     </div>
     <div id="totalRiskScore" style="font-weight:bold; margin-top:10px;">
       Total Risk Score: <span id="riskScoreValue">0</span>
@@ -490,18 +504,28 @@ document.getElementById('calculateDA').addEventListener('click', () => {
 
 // --- Risk Assessment Calculation (new version) ---
 function updateRiskScore() {
-  let staticScore = 0;
-  let dynamicScore = 0;
-  document.querySelectorAll('.static-risk:checked').forEach(cb => {
-    staticScore += parseInt(cb.value);
-  });
-  document.querySelectorAll('.dynamic-risk:checked').forEach(cb => {
-    dynamicScore += parseInt(cb.value);
-  });
-  let imsafeValue = parseInt(document.getElementById('imsafe-risk').value) || 0;
-  staticScore += imsafeValue;
+let staticScore = 0;
+let dynamicScore = 0;
 
-  let total = staticScore + dynamicScore;
+// 处理 static-risk，只处理勾选的 checkbox
+document.querySelectorAll('.static-risk:checked').forEach(cb => {
+  staticScore += parseInt(cb.value);
+});
+
+// 处理 dynamic-risk：checkbox + number
+document.querySelectorAll('.dynamic-risk').forEach(input => {
+  if (input.type === 'checkbox' && input.checked) {
+    dynamicScore += parseInt(input.value);
+  } else if (input.type === 'number') {
+    dynamicScore += parseInt(input.value) || 0;
+  }
+});
+
+// 特别处理 IMSAFE 数字输入（归类在 static-risk）
+let imsafeValue = parseInt(document.getElementById('imsafe-risk').value) || 0;
+staticScore += imsafeValue;
+
+let total = staticScore + dynamicScore;
 
   const riskScoreValue = document.getElementById('riskScoreValue');
   const riskScoreLevel = document.getElementById('riskScoreLevel');
@@ -528,10 +552,28 @@ document.querySelectorAll('.static-risk, .dynamic-risk').forEach(cb => {
   cb.addEventListener('change', updateRiskScore);
 });
 document.getElementById('imsafe-risk').addEventListener('input', updateRiskScore);
+// --- Within Limits Confirmation ---
+function checkWithinLimits() {
+  const val = document.getElementById('withinLimitsText').value.trim().toLowerCase();
+  const status = document.getElementById('withinLimitsStatus');
+  if (val === "within limits") {
+    status.textContent = "✅ Confirmed";
+    status.className = "text-green-600 text-sm ml-2";
+  } else {
+    status.textContent = "❌ Not Confirmed";
+    status.className = "text-red-600 text-sm ml-2";
+  }
+}
 </script>
 <script>
 // Generate Flight Brief Report Button Logic
 document.getElementById("generateReportBtn").addEventListener("click", function () {
+  // Check for within limits confirmation
+  const withinLimitsInput = document.getElementById('withinLimitsText').value.trim().toLowerCase();
+  if (withinLimitsInput !== "within limits") {
+    alert("Please enter 'within limits' to confirm weight & CG limits.");
+    return;
+  }
   // Try to get both possible pilot names (student/instructor)
   const pilotName = document.getElementById("studentName")?.value || '';
   const instructorName = document.getElementById("instructorName")?.value || '';
