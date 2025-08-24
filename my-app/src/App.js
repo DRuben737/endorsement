@@ -5,7 +5,7 @@ import Logbook from './components/Logbook';
 import WeightAndBalance from './components/WeightAndBalance';
 import EndorsementGenerator from './components/EndorsementGenerator';
 import HomePage from './components/HomePage';  // 导入HomePage组件
-import MetarWeather from './components/MetarWeather'; // 引入新组件
+import FlightBrief from './components/FlightBrief';
 
 // For accessibility reasons, bind modal to appElement
 import Modal from 'react-modal';
@@ -23,14 +23,14 @@ function App() {
           <Link to="/logbook">Logbook</Link> | 
           <Link to="/weight-and-balance">Weight and Balance</Link> | 
           <Link to="/endorsement-generator">Generate Endorsement</Link> |  {/* 新增链接 */}
-          <Link to="/metar-weather">METAR Weather</Link>
+          <Link to="/flight-brief">Flight Brief</Link>
         </nav>
         <Routes>
           <Route path="/" element={<HomePage />} />  {/* 主页路由 */}
           <Route path="/logbook" element={<Logbook />} />
           <Route path="/weight-and-balance" element={<WeightAndBalance />} />
           <Route path="/endorsement-generator" element={<EndorsementGenerator />} />  {/* 新的EndorsementGenerator页面 */}
-          <Route path="/metar-weather" element={<MetarWeather />} /> {/* 新的路由 */}
+          <Route path="/flight-brief" element={<FlightBrief />} />
         </Routes>
       </div>
     </Router>

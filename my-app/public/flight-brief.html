@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Brief - PilotSeal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    .btn-toggle {
+      @apply px-4 py-2 rounded transition duration-200 bg-gray-200 hover:bg-gray-300;
+    }
+    .btn-toggle.active {
+      background-color: #2563eb; /* Tailwind's blue-600 */
+      color: white;
+      border: 1px solid #1d4ed8; /* Tailwind's blue-700 */
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+  <style>
+    .risk-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .risk-item label {
+      flex: 1;
+      margin-right: 10px;
+    }
+    .risk-item input[type="checkbox"],
+    .risk-item input[type="number"] {
+      width: auto;
+      margin-left: auto;
+    }
+  </style>
+  <style>
+    .flight-section {
+      background-color: #fff;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 800px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .flight-section h2 {
+      font-size: 20px;
+      color: #0078d7;
+      border-bottom: 2px solid #0078d7;
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+    }
+
+    .flight-section label {
+      font-weight: 500;
+      display: block;
+      margin-top: 12px;
+    }
+
+    .flight-section input,
+    .flight-section select,
+    .flight-section textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .flight-section button {
+      background-color: #0078d7;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .flight-section button:hover {
+      background-color: #005fa3;
+    }
+
+    .risk-summary {
+      font-weight: bold;
+      padding: 12px;
+      margin-top: 16px;
+      border-radius: 6px;
+    }
+
+    .risk-green {
+      background-color: #eafaf1;
+      color: #2ecc71;
+      border-left: 6px solid #2ecc71;
+    }
+
+    .risk-yellow {
+      background-color: #fff9e6;
+      color: #f1c40f;
+      border-left: 6px solid #f1c40f;
+    }
+
+    .risk-red {
+      background-color: #fdecea;
+      color: #e74c3c;
+      border-left: 6px solid #e74c3c;
+    }
+
+    .intermediate-stop {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .intermediate-stop input {
+      flex: 1;
+    }
+
+    .intermediate-stop button {
+      padding: 6px 10px;
+      font-size: 12px;
+      background-color: #d9534f;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .intermediate-stop button:hover {
+      background-color: #c9302c;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex items-center justify-center">
+  <div class="flight-section">
+    <h1 class="text-3xl font-bold text-center mb-6">✈️ Flight Brief</h1>
+    <form class="space-y-4">
+      <div>
+        <label class="block font-semibold mb-1" for="studentName">Student Name</label>
+        <input type="text" id="studentName" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1" for="instructorName">Instructor Name</label>
+        <input type="text" id="instructorName" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1" for="flightDate">Flight Date</label>
+        <input type="date" id="flightDate" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1" for="etd">Estimated Time of Departure (ETD)</label>
+        <input type="time" id="etd" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1" for="eta">Estimated Time of Arrival (ETA)</label>
+        <input type="time" id="eta" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1" for="aircraftId">Aircraft Tail Number</label>
+        <input type="text" id="aircraftId" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1" for="fuel">Fuel Onboard (Gallons)</label>
+        <input type="number" id="fuel" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+      <hr class="my-6" />
+      <h2 class="text-xl font-bold mb-4">🛫 Route</h2>
+      <div>
+        <label class="block font-semibold mb-1" for="departure">Departure Point</label>
+        <input type="text" id="departure" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+      <div class="flex items-center gap-4 mt-4">
+        <button type="button" id="btnCross" class="btn-toggle">Cross Country</button>
+        <button type="button" id="btnLocal" class="btn-toggle">Local Practice</button>
+      </div>
+      <div id="crossCountryFields" class="space-y-3 mt-4 hidden" hidden>
+        <label class="block font-semibold mb-1">Intermediate Stop</label>
+        <div class="flex items-center gap-2">
+          <input type="text" name="stop[]" class="stop-input w-full p-2 border border-gray-300 rounded" />
+          <button type="button" class="remove-stop text-red-500 font-bold">✕</button>
+        </div>
+        <button type="button" id="addStop" class="text-blue-600 underline text-sm">+ Add Another Stop</button>
+      </div>
+      <div class="mt-4">
+        <label class="block font-semibold mb-1" for="arrival">Arrival Point</label>
+        <input type="text" id="arrival" class="w-full p-2 border border-gray-300 rounded" required />
+      </div>
+    </form>
+    <hr class="my-6" />
+    <h2 class="text-xl font-bold mb-4">🌦️ Weather Information</h2>
+    <div id="weather-section" class="space-y-6">
+      <div class="text-center">
+        <button id="fetchWeatherBtn" type="button" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+          Fetch Weather
+        </button>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg mb-2">🟢 METAR</h3>
+        <div id="metar-section" class="space-y-2"></div>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg mb-2">🟡 TAF</h3>
+        <div id="taf-section" class="space-y-2"></div>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg mb-2">🔴 AIRMET/SIGMET</h3>
+        <div id="airsigmet-section" class="space-y-2"></div>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg mb-2">📏 Density Altitude (DA)</h3>
+        <label class="block font-semibold mb-1" for="fieldElevation">Field Elevation (ft)</label>
+        <input type="number" id="fieldElevation" class="w-full p-2 border border-gray-300 rounded mb-2" placeholder="e.g. 2500" />
+        <label class="block font-semibold mb-1" for="outsideTemp">Outside Air Temperature (°C)</label>
+        <input type="number" id="outsideTemp" class="w-full p-2 border border-gray-300 rounded mb-2" placeholder="e.g. 30" />
+        <button type="button" id="calculateDA" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-2">
+          Calculate DA
+        </button>
+        <div id="daResult" class="text-sm text-gray-700 font-medium mt-2"></div>
+      </div>
+    </div>
+    <hr class="my-6" />
+    <h2 class="text-xl font-bold mb-4">⚖️ Weight & Balance</h2>
+    <div class="space-y-4">
+      <div>
+        <label class="block font-semibold mb-1" for="grossWeight">Total Gross Weight (lbs)</label>
+        <input type="number" id="grossWeight" class="w-full p-2 border border-gray-300 rounded" placeholder="e.g. 2400" />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1" for="fuelTime">Fuel Time (hrs)</label>
+        <input type="number" id="fuelTime" class="w-full p-2 border border-gray-300 rounded" placeholder="e.g. 2.5" />
+      </div>
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" id="withinLimits" class="form-checkbox h-5 w-5 text-green-600" />
+        <label for="withinLimits" class="text-gray-700 font-medium">Confirmed: Within Weight & CG Limits</label>
+      </div>
+    </div>
+    <hr>
+    <h2>🧭 Risk Assessment</h2>
+    <h3>🪨 Static Risk</h3>
+    <div class="risk-item">
+      <label for="static-dual-flight">Dual flight:</label>
+      <input type="checkbox" class="static-risk" value="1" id="static-dual-flight" name="static-dual-flight">
+    </div>
+    <div class="risk-item">
+      <label for="static-training-pre-solo">Training Pre-solo student:</label>
+      <input type="checkbox" class="static-risk" value="3" id="static-training-pre-solo" name="static-training-pre-solo">
+    </div>
+    <div class="risk-item">
+      <label for="static-solo-student">SOLO student:</label>
+      <input type="checkbox" class="static-risk" value="3" id="static-solo-student" name="static-solo-student">
+    </div>
+    <div class="risk-item">
+      <label for="static-dpe-check">DPE or Check flight:</label>
+      <input type="checkbox" class="static-risk" value="2" id="static-dpe-check" name="static-dpe-check">
+    </div>
+    <div class="risk-item">
+      <label for="imsafe-risk">IMSAFE (each factor counts 1):</label>
+      <input type="number" id="imsafe-risk" name="imsafe-risk" min="0" max="6" value="0">
+    </div>
+    <div class="risk-item">
+      <label for="static-first-fly-fi">First fly with FI:</label>
+      <input type="checkbox" class="static-risk" value="1" id="static-first-fly-fi" name="static-first-fly-fi">
+    </div>
+    <div class="risk-item">
+      <label for="static-different-model">Different model:</label>
+      <input type="checkbox" class="static-risk" value="1" id="static-different-model" name="static-different-model">
+    </div>
+    <div class="risk-item">
+      <label for="static-last-flight-30">Last flight &gt;30 days:</label>
+      <input type="checkbox" class="static-risk" value="1" id="static-last-flight-30" name="static-last-flight-30">
+    </div>
+    <div class="risk-item">
+      <label for="static-acft-time-40">Aircraft time &lt; 40 hours (Rated):</label>
+      <input type="checkbox" class="static-risk" value="1" id="static-acft-time-40" name="static-acft-time-40">
+    </div>
+    <div class="risk-item">
+      <label for="static-fi-dual-200">FI &lt; 200 hours Dual given:</label>
+      <input type="checkbox" class="static-risk" value="1" id="static-fi-dual-200" name="static-fi-dual-200">
+    </div>
+    <h3>🌪️ Dynamic Risk</h3>
+    <div class="risk-item">
+      <label for="dynamic-night-ops">Night ops:</label>
+      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-night-ops" name="dynamic-night-ops">
+    </div>
+    <div class="risk-item">
+      <label for="dynamic-last-night-30">Last night &gt;30 days:</label>
+      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-last-night-30" name="dynamic-last-night-30">
+    </div>
+    <div class="risk-item">
+      <label for="dynamic-svfr">SVFR:</label>
+      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-svfr" name="dynamic-svfr">
+    </div>
+    <div class="risk-item">
+      <label for="dynamic-stall-training">STALL Training:</label>
+      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-stall-training" name="dynamic-stall-training">
+    </div>
+    <div class="risk-item">
+      <label for="dynamic-spin-training">SPIN Training:</label>
+      <input type="checkbox" class="dynamic-risk" value="2" id="dynamic-spin-training" name="dynamic-spin-training">
+    </div>
+    <div class="risk-item">
+      <label for="dynamic-gust-spread">Gust spread &gt; 13 kt:</label>
+      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-gust-spread" name="dynamic-gust-spread">
+    </div>
+    <div class="risk-item">
+      <label for="dynamic-other-fi-cancel">Other FI cancellation due to WX:</label>
+      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-other-fi-cancel" name="dynamic-other-fi-cancel">
+    </div>
+    <div class="risk-item">
+      <label for="dynamic-max-fuel-flight">Max fuel flight:</label>
+      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-max-fuel-flight" name="dynamic-max-fuel-flight">
+    </div>
+    <div id="totalRiskScore" style="font-weight:bold; margin-top:10px;">
+      Total Risk Score: <span id="riskScoreValue">0</span>
+      <span id="riskScoreLevel" style="margin-left:15px; font-weight:bold;"></span>
+      <div id="riskRecommendation" style="margin-top:5px; font-style:italic;"></div>
+    </div>
+    <div style="text-align: center; margin-top: 2rem;">
+      <button id="generateReportBtn">Generate Flight Brief Report</button>
+    </div>
+  </div>
+
+<script>
+  let latestAltimeter = null;
+  let latestTemperatureC = null;
+
+  const btnCross = document.getElementById('btnCross');
+  const btnLocal = document.getElementById('btnLocal');
+  const crossCountryFields = document.getElementById('crossCountryFields');
+  const departure = document.getElementById('departure');
+  const arrival = document.getElementById('arrival');
+  const addStopBtn = document.getElementById('addStop');
+
+  btnCross.addEventListener('click', () => {
+    crossCountryFields.classList.remove('hidden');
+    crossCountryFields.removeAttribute('hidden');
+    btnCross.classList.add('active');
+    btnLocal.classList.remove('active');
+    arrival.value = '';
+  });
+
+  btnLocal.addEventListener('click', () => {
+    crossCountryFields.classList.add('hidden');
+    crossCountryFields.setAttribute('hidden', '');
+    btnLocal.classList.add('active');
+    btnCross.classList.remove('active');
+    arrival.value = departure.value;
+  });
+
+  departure.addEventListener('input', () => {
+    if (crossCountryFields.classList.contains('hidden')) {
+      arrival.value = departure.value;
+    }
+  });
+
+  addStopBtn.addEventListener('click', () => {
+    const stopDiv = document.createElement('div');
+    stopDiv.classList.add('flex', 'items-center', 'gap-2');
+    stopDiv.innerHTML = `
+      <input type="text" name="stop[]" class="stop-input w-full p-2 border border-gray-300 rounded" />
+      <button type="button" class="remove-stop text-red-500 font-bold">✕</button>
+    `;
+    crossCountryFields.insertBefore(stopDiv, addStopBtn);
+  });
+
+  // Event delegation for removing stops
+  crossCountryFields.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-stop')) {
+      e.target.parentElement.remove();
+    }
+  });
+
+  // --------- Weather Info Section ---------
+
+  async function fetchData(url) {
+    const response = await fetch(url);
+    return await response.json();
+  }
+
+  async function displayWeather() {
+    const airports = [];
+
+    const dep = document.getElementById('departure')?.value.trim();
+    if (dep) airports.push(dep.toUpperCase());
+
+    const stops = Array.from(document.querySelectorAll('.stop-input')).map(i => i.value.trim()).filter(Boolean);
+    airports.push(...stops.map(s => s.toUpperCase()));
+
+    const arr = document.getElementById('arrival')?.value.trim();
+    if (arr) airports.push(arr.toUpperCase());
+
+    const metarSection = document.getElementById('metar-section');
+    const tafSection = document.getElementById('taf-section');
+    const airsigmetSection = document.getElementById('airsigmet-section');
+
+    metarSection.innerHTML = '';
+    tafSection.innerHTML = '';
+    airsigmetSection.innerHTML = '';
+
+    for (const icao of airports) {
+      const metarUrl = `https://brief.r1978244759.workers.dev/?url=https://avwx.rest/api/metar/${icao}?format=json`;
+      const tafUrl = `https://brief.r1978244759.workers.dev/?url=https://avwx.rest/api/taf/${icao}?format=json`;
+      const metarData = await fetchData(metarUrl);
+      const tafData = await fetchData(tafUrl);
+
+      // Extract altimeter and temperature if not already set
+      if (!latestAltimeter && metarData?.altimeter?.value) {
+        latestAltimeter = metarData.altimeter.value;
+      }
+      if (!latestTemperatureC && metarData?.temperature?.value) {
+        latestTemperatureC = metarData.temperature.value;
+        document.getElementById('outsideTemp').value = latestTemperatureC; // 自动填入输入框
+      }
+
+      const metarDiv = document.createElement('div');
+      metarDiv.className = 'bg-gray-100 p-3 rounded border';
+      metarDiv.textContent = `METAR for ${icao}: ${metarData?.raw || 'Unavailable'}`;
+      metarSection.appendChild(metarDiv);
+
+      const tafDiv = document.createElement('div');
+      tafDiv.className = 'bg-gray-100 p-3 rounded border';
+      tafDiv.textContent = `TAF for ${icao}: ${tafData?.raw || 'Unavailable'}`;
+      tafSection.appendChild(tafDiv);
+    }
+
+    // AIRMET/SIGMET（仅显示一次）
+    const sigmetUrl = `https://brief.r1978244759.workers.dev/?url=https://avwx.rest/api/airsigmet?format=json`;
+    const airsigmetData = await fetchData(sigmetUrl);
+    const airsigDiv = document.createElement('div');
+    airsigDiv.className = 'bg-gray-100 p-3 rounded border';
+    airsigDiv.textContent = Array.isArray(airsigmetData) && airsigmetData.length
+      ? `${airsigmetData.length} active AIRMET/SIGMETs in U.S. FIRs`
+      : 'No active AIRMET/SIGMETs';
+    airsigmetSection.appendChild(airsigDiv);
+  }
+
+  // 在 Fetch Weather 按钮点击时附加天气展示逻辑
+  document.getElementById('fetchWeatherBtn').addEventListener('click', async () => {
+    await displayWeather();
+  });
+
+document.getElementById('calculateDA').addEventListener('click', () => {
+  const elevation = parseFloat(document.getElementById('fieldElevation').value);
+  const temperature = parseFloat(document.getElementById('outsideTemp').value);
+  const resultDiv = document.getElementById('daResult');
+
+  if (isNaN(elevation)) {
+    resultDiv.textContent = 'Please enter field elevation.';
+    return;
+  }
+
+  if (!latestAltimeter || isNaN(temperature)) {
+    resultDiv.textContent = 'Weather data is missing or invalid. Please click "Fetch Weather" first.';
+    return;
+  }
+
+  const pressureAltitude = (29.92 - latestAltimeter) * 1000 + elevation;
+  const isaTemp = 15 - (2 * (elevation / 1000));
+  const da = Math.round(pressureAltitude + (120 * (temperature - isaTemp)));
+
+  resultDiv.textContent = `Estimated Density Altitude: ${da.toLocaleString()} ft (using Altimeter ${latestAltimeter} inHg)`;
+});
+
+// --- Risk Assessment Calculation (new version) ---
+function updateRiskScore() {
+  let staticScore = 0;
+  let dynamicScore = 0;
+  document.querySelectorAll('.static-risk:checked').forEach(cb => {
+    staticScore += parseInt(cb.value);
+  });
+  document.querySelectorAll('.dynamic-risk:checked').forEach(cb => {
+    dynamicScore += parseInt(cb.value);
+  });
+  let imsafeValue = parseInt(document.getElementById('imsafe-risk').value) || 0;
+  staticScore += imsafeValue;
+
+  let total = staticScore + dynamicScore;
+
+  const riskScoreValue = document.getElementById('riskScoreValue');
+  const riskScoreLevel = document.getElementById('riskScoreLevel');
+  const riskRecommendation = document.getElementById('riskRecommendation');
+
+  riskScoreValue.textContent = total;
+
+  if (total <= 10) {
+    riskScoreLevel.textContent = '🟢 LOW RISK';
+    riskScoreLevel.style.color = 'green';
+    riskRecommendation.textContent = 'Risk acceptable after discussion. Flight may proceed.';
+  } else if (total > 10 && total <= 15) {
+    riskScoreLevel.textContent = '🟡 MODERATE RISK';
+    riskScoreLevel.style.color = 'orange';
+    riskRecommendation.textContent = 'Consult with senior or chief instructor to discuss risk mitigation. May proceed after reduction.';
+  } else {
+    riskScoreLevel.textContent = '🔴 HIGH RISK';
+    riskScoreLevel.style.color = 'red';
+    riskRecommendation.textContent = 'Flight requires Chief Pilot approval. Discuss flight plan in detail.';
+  }
+}
+
+document.querySelectorAll('.static-risk, .dynamic-risk').forEach(cb => {
+  cb.addEventListener('change', updateRiskScore);
+});
+document.getElementById('imsafe-risk').addEventListener('input', updateRiskScore);
+</script>
+<script>
+// Generate Flight Brief Report Button Logic
+document.getElementById("generateReportBtn").addEventListener("click", function () {
+  // Try to get both possible pilot names (student/instructor)
+  const pilotName = document.getElementById("studentName")?.value || '';
+  const instructorName = document.getElementById("instructorName")?.value || '';
+  const date = document.getElementById("flightDate")?.value || '';
+  const tailNumber = document.getElementById("aircraftId")?.value || '';
+  const fuelOnBoard = document.getElementById("fuel")?.value || '';
+  // ETE is not present, so leave blank
+  const ete = '';
+
+  const dep = document.getElementById("departure")?.value || '';
+  const arr = document.getElementById("arrival")?.value || '';
+  const eta = document.getElementById("eta")?.value || '';
+  const etd = document.getElementById("etd")?.value || '';
+
+  const da = document.getElementById("daResult")?.textContent || '';
+  const wnbGross = document.getElementById("grossWeight")?.value || '';
+  const wnbFuelTime = document.getElementById("fuelTime")?.value || '';
+  const riskScore = document.getElementById("riskScoreValue")?.textContent || '';
+  const riskCategory = document.getElementById("riskScoreLevel")?.textContent || '';
+  const riskAdvice = document.getElementById("riskRecommendation")?.textContent || '';
+
+  const reportWindow = window.open("", "_blank");
+  reportWindow.document.write(`
+    <html>
+      <head>
+        <title>Flight Brief Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 2rem; line-height: 1.5; }
+          h2 { border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+          .section { margin-bottom: 2rem; }
+        </style>
+      </head>
+      <body>
+        <h1>Flight Brief Report</h1>
+        <div class="section">
+          <h2>Basic Info</h2>
+          <p><strong>Student Name:</strong> ${pilotName}</p>
+          <p><strong>Instructor Name:</strong> ${instructorName}</p>
+          <p><strong>Date:</strong> ${date}</p>
+          <p><strong>Aircraft:</strong> ${tailNumber}</p>
+          <p><strong>Fuel:</strong> ${fuelOnBoard}</p>
+          <p><strong>ETE:</strong> ${ete}</p>
+        </div>
+        <div class="section">
+          <h2>Route</h2>
+          <p><strong>Departure:</strong> ${dep}</p>
+          <p><strong>Arrival:</strong> ${arr}</p>
+          <p><strong>ETD:</strong> ${etd}</p>
+          <p><strong>ETA:</strong> ${eta}</p>
+        </div>
+        <div class="section">
+          <h2>Weather</h2>
+          <p><strong>Density Altitude:</strong> ${da}</p>
+        </div>
+        <div class="section">
+          <h2>Weight & Balance</h2>
+          <p><strong>Gross Weight:</strong> ${wnbGross}</p>
+          <p><strong>Fuel Time:</strong> ${wnbFuelTime}</p>
+        </div>
+        <div class="section">
+          <h2>Risk Assessment</h2>
+          <p><strong>Total Risk Score:</strong> ${riskScore}</p>
+          <p><strong>Category:</strong> ${riskCategory}</p>
+          <p><strong>Advice:</strong> ${riskAdvice}</p>
+        </div>
+      </body>
+    </html>
+  `);
+  reportWindow.document.close();
+});
+</script>
+</body>
+</html>
