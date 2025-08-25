@@ -6,7 +6,6 @@ import EndorsementGenerator from './components/EndorsementGenerator';
 import FlightBrief from './components/FlightBrief';
 import HomePage from './components/HomePage';
 import Logbook from './components/Logbook';
-import WeightAndBalance from './components/WeightAndBalance';
 
 import Modal from 'react-modal';
 // For accessibility reasons, bind modal to appElement
@@ -25,7 +24,6 @@ function App() {
           <nav>
             <Link to="/">Home</Link> | 
             <Link to="/logbook">Logbook</Link> | 
-            <Link to="/weight-and-balance">Weight and Balance</Link> | 
             <Link to="/endorsement-generator">Generate Endorsement</Link> | 
             <Link to="/flight-brief">Flight Brief</Link>
           </nav>
@@ -35,7 +33,6 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/logbook" element={<Logbook />} />
-            <Route path="/weight-and-balance" element={<WeightAndBalance />} />
             <Route path="/endorsement-generator" element={<EndorsementGenerator />} />
             <Route path="/flight-brief" element={<FlightBrief />} />
           </Routes>
