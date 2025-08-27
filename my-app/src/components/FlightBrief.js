@@ -2,14 +2,19 @@ import React, { useEffect } from 'react';
 
 const FlightBrief = () => {
   useEffect(() => {
-    window.open('/flight-brief.html', '_blank', 'noopener,noreferrer');
-    window.location.href = '/';
+    document.title = 'Brief - PilotSeal';
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 text-gray-800 text-center">
-      <h1 className="text-2xl">正在打开 Flight Brief 页面...</h1>
-    </div>
+    <iframe
+      src="/flight-brief.html"
+      title="Flight Brief"
+      style={{
+        border: 'none',
+        width: '100%',
+        height: '100vh',
+      }}
+    />
   );
 };
 
