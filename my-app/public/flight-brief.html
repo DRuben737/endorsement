@@ -5,205 +5,90 @@
   <title>Brief - PilotSeal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet" />
-  <style>
-    /* .btn-toggle {
-      @apply px-4 py-2 rounded transition duration-200 bg-gray-200 hover:bg-gray-300;
-    } */
-    .btn-toggle {
-      padding-left: 1rem;
-      padding-right: 1rem;
-      padding-top: 0.5rem;
-      padding-bottom: 0.5rem;
-      border-radius: 0.25rem;
-      transition: background-color 0.2s;
-      background-color: #e5e7eb; /* Tailwind's bg-gray-200 */
-    }
-    .btn-toggle:hover {
-      background-color: #d1d5db; /* Tailwind's bg-gray-300 */
-    }
-    .btn-toggle.active {
-      background-color: #2563eb; /* Tailwind's blue-600 */
-      color: white;
-      border: 1px solid #1d4ed8; /* Tailwind's blue-700 */
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    }
-  </style>
-  <style>
-    .risk-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .risk-item label {
-      flex: 1;
-      margin-right: 10px;
-    }
-    .risk-item input[type="checkbox"],
-    .risk-item input[type="number"] {
-      width: auto;
-      margin-left: auto;
-    }
-  </style>
-  <style>
-    .flight-section {
-      background-color: #fff;
-      padding: 20px;
-      margin: 20px auto;
-      max-width: 800px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
+<link rel="stylesheet" href="Brief.css">
+<!--<style>
 
-    .flight-section h2 {
-      font-size: 20px;
-      color: #0078d7;
-      border-bottom: 2px solid #0078d7;
-      padding-bottom: 6px;
-      margin-bottom: 16px;
-    }
-
-    .flight-section label {
-      font-weight: 500;
-      display: block;
-      margin-top: 12px;
-    }
-
-    .flight-section input,
-    .flight-section select,
-    .flight-section textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    .flight-section button {
-      background-color: #0078d7;
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 12px;
-    }
-
-    .flight-section button:hover {
-      background-color: #005fa3;
-    }
-
-    .risk-summary {
-      font-weight: bold;
-      padding: 12px;
-      margin-top: 16px;
-      border-radius: 6px;
-    }
-
-    .risk-green {
-      background-color: #eafaf1;
-      color: #2ecc71;
-      border-left: 6px solid #2ecc71;
-    }
-
-    .risk-yellow {
-      background-color: #fff9e6;
-      color: #f1c40f;
-      border-left: 6px solid #f1c40f;
-    }
-
-    .risk-red {
-      background-color: #fdecea;
-      color: #e74c3c;
-      border-left: 6px solid #e74c3c;
-    }
-
-    .intermediate-stop {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .intermediate-stop input {
-      flex: 1;
-    }
-
-    .intermediate-stop button {
-      padding: 6px 10px;
-      font-size: 12px;
-      background-color: #d9534f;
-      border: none;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .intermediate-stop button:hover {
-      background-color: #c9302c;
-    }
-  </style>
+</style>
+-->
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen flex items-center justify-center">
+<body class="flightbrief-body">
   <div class="flight-section">
     <h1 class="text-3xl font-bold text-center mb-6">✈️ Flight Brief</h1>
+    <hr class="dived-line"/>
+    <h2 class="text-xl font-bold mb-4">📓Information</h2>
     <form class="space-y-4">
-      <div>
-        <label class="block font-semibold mb-1" for="studentName">Student Name</label>
-        <input type="text" id="studentName" class="w-full p-2 border border-gray-300 rounded" required />
+      <div class="inline-label-input">
+        <label class="label" for="studentName">Student Name(Pilot Flying):</label>
+        <input type="text" id="studentName" class="input-field" required />
       </div>
-      <div>
-        <label class="block font-semibold mb-1" for="instructorName">Instructor Name</label>
-        <input type="text" id="instructorName" class="w-full p-2 border border-gray-300 rounded" required />
+      <div class="inline-label-input">
+        <label class="label" for="instructorName">Instructor Name(Pilot In Command):</label>
+        <input type="text" id="instructorName" class="input-field" required />
       </div>
-      <div>
-        <label class="block font-semibold mb-1" for="flightDate">Select Date</label>
-        <input type="date" id="flightDate" class="w-full p-2 border border-gray-300 rounded" required placeholder="Select date" title="Select date" lang="en" />
+      <div class="inline-label-input">
+        <label class="label" for="flight-rules">Flight Rules:</label>
+        <select id="flight-rules" class="input-field" title="Select flight rules">
+          <option value="VFR">VFR</option>
+          <option value="IFR">IFR</option>
+        </select>
       </div>
-      <div>
-        <label class="block font-semibold mb-1" for="etd">Estimated Time of Departure (ETD)</label>
-        <input type="time" id="etd" class="w-full p-2 border border-gray-300 rounded" required placeholder="Select time" title="Select time" />
+      <div class="inline-label-input">
+        <label class="label" for="flightDate">Select Date</label>
+        <input type="date" id="flightDate" class="input-field" required placeholder="Select date" title="Select date" lang="en" />
       </div>
-      <div>
-        <label class="block font-semibold mb-1" for="eta">Estimated Time of Arrival (ETA)</label>
-        <input type="time" id="eta" class="w-full p-2 border border-gray-300 rounded" required placeholder="Select time" title="Select time" />
+      <div class="inline-label-input">
+        <label class="label" for="etd">Estimated Time of Departure (ETD)</label>
+        <input type="time" id="etd" class="input-field" required placeholder="Select time" title="Select time" />
       </div>
-      <div>
-        <label class="block font-semibold mb-1" for="aircraftId">Aircraft Tail Number</label>
-        <input type="text" id="aircraftId" class="w-full p-2 border border-gray-300 rounded" required />
+      <div class="inline-label-input">
+        <label class="label" for="eta">Estimated Time of Arrival (ETA)</label>
+        <input type="time" id="eta" class="input-field" required placeholder="Select time" title="Select time" />
       </div>
-      <div>
-        <label class="block font-semibold mb-1" for="fuel">Fuel Onboard (Gallons)</label>
-        <input type="number" id="fuel" class="w-full p-2 border border-gray-300 rounded" required />
+      <div class="inline-label-input">
+        <label class="label" for="ete">Estimated Time Enroute (ETE)</label>
+        <input type="text" id="ete" class="input-field" readonly placeholder="Auto-calculated" title="Calculated ETE" />
       </div>
-      <hr class="my-6" />
+      <div class="inline-label-input">
+        <label class="label" for="aircraftId">Aircraft Tail Number:</label>
+        <input type="text" id="aircraftId" class="input-field" required />
+      </div>
+      <div class="inline-label-input">
+        <label class="label" for="fuel">Fuel Onboard (Gallons):</label>
+        <input type="number" id="fuel" class="input-field" required />
+      </div>
+      <div class="inline-label-input">
+        <label class="label" for="fuelTime">Fuel Time (hrs):</label>
+        <input type="number" id="fuelTime" class="input-field" placeholder="e.g. 2.5" />
+      </div>
+      <hr class="dived-line"/>
       <h2 class="text-xl font-bold mb-4">🛫 Route</h2>
-      <div>
-        <label class="block font-semibold mb-1" for="departure">Departure Point</label>
-        <input type="text" id="departure" class="w-full p-2 border border-gray-300 rounded" required />
+      <div class="inline-label-input">
+        <label class="label" for="departure">Departure Point:</label>
+        <input type="text" id="departure" class="input-field" required />
       </div>
       <div class="flex items-center gap-4 mt-4">
         <button type="button" id="btnCross" class="btn-toggle">Cross Country</button>
         <button type="button" id="btnLocal" class="btn-toggle">Local Practice</button>
       </div>
       <div id="crossCountryFields" class="space-y-3 mt-4 hidden" hidden>
-        <label class="block font-semibold mb-1">Intermediate Stop</label>
+        <label class="label">Intermediate Stop</label>
         <div class="flex items-center gap-2">
-          <input type="text" name="stop[]" class="stop-input w-full p-2 border border-gray-300 rounded" />
+          <input type="text" name="stop[]" class="stop-input input-field" />
           <button type="button" class="remove-stop text-red-500 font-bold">✕</button>
         </div>
         <button type="button" id="addStop" class="text-blue-600 underline text-sm">+ Add Another Stop</button>
       </div>
-      <div class="mt-4">
-        <label class="block font-semibold mb-1" for="arrival">Arrival Point</label>
-        <input type="text" id="arrival" class="w-full p-2 border border-gray-300 rounded" required />
+      <div class="inline-label-input mt-4">
+        <label class="label" for="arrival">Arrival Point:</label>
+        <input type="text" id="arrival" class="input-field" required />
       </div>
       <!-- Lesson Practice section inserted here -->
-      <div class="section">
-        <label for="lessonPractice"><strong>✏️ Lesson Practice</strong></label><br>
-        <input type="text" id="lessonPractice" placeholder="e.g., Steep Turns, Slow Flight, Short Field Landing" style="width: 100%; margin-top: 5px;">
+      <div class="section inline-label-input">
+        <label class="label" for="lessonPractice"><strong>✏️ Lesson Practice:</strong></label>
+        <input type="text" id="lessonPractice" class="input-field" placeholder="e.g., Steep Turns, Slow Flight, Short Field Landing">
       </div>
     </form>
-    <hr class="my-6" />
+    <hr class="dived-line"/>
     <h2 class="text-xl font-bold mb-4">🌦️ Weather Information</h2>
     <div id="weather-section" class="space-y-6">
       <div class="text-center">
@@ -212,23 +97,27 @@
         </button>
       </div>
       <div>
-        <h3 class="font-bold text-lg mb-2">🟢 METAR</h3>
+        <h3>🟢 METAR</h3>
         <div id="metar-section" class="space-y-2"></div>
       </div>
       <div>
-        <h3 class="font-bold text-lg mb-2">🟡 TAF</h3>
+        <h3>🟡 TAF</h3>
         <div id="taf-section" class="space-y-2"></div>
       </div>
       <div>
-        <h3 class="font-bold text-lg mb-2">🔴 AIRMET/SIGMET</h3>
+        <h3>🔴 AIRMET/SIGMET</h3>
         <div id="airsigmet-section" class="space-y-2"></div>
       </div>
       <div>
-        <h3 class="font-bold text-lg mb-2">📏 Density Altitude (DA)</h3>
-        <label class="block font-semibold mb-1" for="fieldElevation">Field Elevation (ft)</label>
-        <input type="number" id="fieldElevation" class="w-full p-2 border border-gray-300 rounded mb-2" placeholder="e.g. 2500" />
-        <label class="block font-semibold mb-1" for="outsideTemp">Outside Air Temperature (°C)</label>
-        <input type="number" id="outsideTemp" class="w-full p-2 border border-gray-300 rounded mb-2" placeholder="e.g. 30" />
+        <h3 class="section-subtitle">📏 Density Altitude (DA)</h3>
+        <div class="inline-label-input">
+          <label class="label" for="fieldElevation">Field Elevation (ft)</label>
+          <input type="number" id="fieldElevation" class="input-field" placeholder="e.g. 2500" />
+        </div>
+        <div class="inline-label-input">
+          <label class="label" for="outsideTemp">Outside Air Temperature (°C)</label>
+          <input type="number" id="outsideTemp" class="input-field" placeholder="e.g. 30" />
+        </div>
         <button type="button" id="calculateDA" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-2">
           Calculate DA
         </button>
@@ -236,115 +125,128 @@
       </div>
     </div>
     <!-- Notes / NOTAMs section inserted after weather information, before Weight & Balance -->
-    <div class="section">
-      <label for="weatherNotes"><strong>📝 Notes / NOTAMs</strong></label><br>
-      <textarea id="weatherNotes" rows="3" placeholder="Enter NOTAMs, ATIS, or other relevant notes here..." style="width: 100%; margin-top: 5px;"></textarea>
+    <div class="section inline-label-input">
+      <label class="label" for="weatherNotes"><strong>📝 Notes / NOTAMs</strong></label>
+      <textarea id="weatherNotes" rows="3" class="input-field" placeholder="Enter NOTAMs, ATIS, or other relevant notes here..."></textarea>
     </div>
-    <hr class="my-6" />
-    <h2 class="text-xl font-bold mb-4">⚖️ Weight & Balance</h2>
+   <hr class="dived-line"/>
+    <h2 class="text-xl font-bold mb-4">⚖️ Aircraft Conditions</h2>
     <div class="space-y-4">
-      <div>
-        <label class="block font-semibold mb-1" for="grossWeight">Total Gross Weight (lbs)</label>
-        <input type="number" id="grossWeight" class="w-full p-2 border border-gray-300 rounded" placeholder="e.g. 2400" />
+      <div class="inline-label-input">
+        <label class="label" for="grossWeight">Total Gross Weight (lbs):</label>
+        <input type="number" id="grossWeight" class="input-field" placeholder="e.g. 2400" />
       </div>
-      <div>
-        <label class="block font-semibold mb-1" for="fuelTime">Fuel Time (hrs)</label>
-        <input type="number" id="fuelTime" class="w-full p-2 border border-gray-300 rounded" placeholder="e.g. 2.5" />
-      </div>
-            <div class="mb-4">
-        <label for="estimated-flight-time" class="block text-gray-700 font-medium mb-1">Estimated Flight Time (hrs)</label>
-        <input type="number" id="estimated-flight-time" name="estimated-flight-time" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-      </div>
-      <div class="flex items-center space-x-2">
-        <label for="withinLimitsText" class="text-gray-700 font-medium">Enter "within limits" to confirm:</label>
-        <input type="text" id="withinLimitsText" class="border rounded px-2 py-1 text-sm" placeholder="within limits" oninput="checkWithinLimits()" />
+      <div class="inline-label-input">
+        <label class="label" for="withinLimitsText">Enter "within limits" to confirm:</label>
+        <input type="text" id="withinLimitsText" class="input-field" placeholder="within limits" oninput="checkWithinLimits()" />
         <span id="withinLimitsStatus" class="text-sm ml-2"></span>
       </div>
+      <div class="inline-label-input">
+        <label class="label" for="mx-now">Mx Time Now:</label>
+        <input type="number" id="mx-now" class="input-field" placeholder="Check Aircraft" />
+      </div>
+      <div class="inline-label-input">
+        <label class="label" for="mx-due">Next Mx Due:</label>
+        <input type="number" id="mx-due" class="input-field" placeholder="Next 100 hr/annual eg." />
+      </div>
+      
     </div>
-    <hr>
+    <hr class="dived-line"/>
     <h2>🧭 Risk Assessment</h2>
-    <h3>🪨 Static Risk</h3>
-    <div class="risk-item">
-      <label for="static-dual-flight">Dual flight:</label>
-      <input type="checkbox" class="static-risk" value="1" id="static-dual-flight" name="static-dual-flight">
+    <div class="risk-columns">
+      <div class="static-risk-column">
+        <h3>🪨 Static Risk</h3>
+        <div class="risk-item">
+          <label for="static-dual-flight">Dual flight:</label>
+          <input type="checkbox" class="static-risk" value="1" id="static-dual-flight" name="static-dual-flight">
+        </div>
+        <div class="risk-item">
+          <label for="static-training-pre-solo">Training Pre-solo student:</label>
+          <input type="checkbox" class="static-risk" value="3" id="static-training-pre-solo" name="static-training-pre-solo">
+        </div>
+        <div class="risk-item">
+          <label for="static-solo-student">SOLO student:</label>
+          <input type="checkbox" class="static-risk" value="3" id="static-solo-student" name="static-solo-student">
+        </div>
+        <div class="risk-item">
+          <label for="static-dpe-check">DPE or Check flight:</label>
+          <input type="checkbox" class="static-risk" value="2" id="static-dpe-check" name="static-dpe-check">
+        </div>
+        <div class="risk-item">
+          <label for="imsafe-risk">IMSAFE (each factor counts 1):</label>
+          <input type="number" id="imsafe-risk" name="imsafe-risk" min="0" max="6" value="0">
+        </div>
+        <div class="risk-item">
+          <label for="static-first-fly-fi">First fly with FI:</label>
+          <input type="checkbox" class="static-risk" value="1" id="static-first-fly-fi" name="static-first-fly-fi">
+        </div>
+        <div class="risk-item">
+          <label for="static-different-model">Different model:</label>
+          <input type="checkbox" class="static-risk" value="1" id="static-different-model" name="static-different-model">
+        </div>
+        <div class="risk-item">
+          <label for="static-last-flight-30">Last flight &gt;30 days:</label>
+          <input type="checkbox" class="static-risk" value="1" id="static-last-flight-30" name="static-last-flight-30">
+        </div>
+        <div class="risk-item">
+          <label for="static-acft-time-40">Aircraft time &lt; 40 hours (Rated):</label>
+          <input type="checkbox" class="static-risk" value="1" id="static-acft-time-40" name="static-acft-time-40">
+        </div>
+        <div class="risk-item">
+          <label for="static-fi-dual-200">FI &lt; 200 hours Dual given:</label>
+          <input type="checkbox" class="static-risk" value="1" id="static-fi-dual-200" name="static-fi-dual-200">
+        </div>
+      </div>
+      <div class="dynamic-risk-column">
+        <h3>🌪️ Dynamic Risk</h3>
+        <div class="risk-item">
+          <label for="dynamic-night-ops">Night ops:</label>
+          <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-night-ops" name="dynamic-night-ops">
+        </div>
+        <div class="risk-item">
+          <label for="dynamic-last-night-30">Last night &gt;30 days:</label>
+          <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-last-night-30" name="dynamic-last-night-30">
+        </div>
+        <div class="risk-item">
+          <label for="dynamic-svfr">SVFR:</label>
+          <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-svfr" name="dynamic-svfr">
+        </div>
+        
+        <div class="risk-item">
+          <label for="dynamic-gust-spread">Gust spread &gt; 13 kt:</label>
+          <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-gust-spread" name="dynamic-gust-spread">
+        </div>
+        <div class="risk-item">
+          <label for="dynamic-other-fi-cancel">Other FI cancellation due to WX:</label>
+          <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-other-fi-cancel" name="dynamic-other-fi-cancel">
+        </div>
+        <div class="risk-item">
+          <label for="dynamic-max-fuel-flight">Max fuel flight:</label>
+          <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-max-fuel-flight" name="dynamic-max-fuel-flight">
+        </div>
+        <!-- 新增 Full down auto 选项 -->
+        <div class="risk-item">
+          <label for="full-down-auto">Full down auto:</label>
+          <input type="checkbox" class="dynamic-risk" value="1" id="full-down-auto" name="full-down-auto">
+        </div>
+        <div class="risk-item">
+          <label for="dynamic-stall-training">STALL Training:</label>
+          <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-stall-training" name="dynamic-stall-training">
+        </div>
+        <div class="risk-item">
+          <label for="dynamic-spin-training">SPIN Training:</label>
+          <input type="checkbox" class="dynamic-risk" value="2" id="dynamic-spin-training" name="dynamic-spin-training">
+        </div>
+        <div class="risk-item">
+          <label for="other-risk">Other Risks:</label>
+          <input type="number" class="dynamic-risk" name="other-risk" min="0" max="5" value="0">
+        </div>
+      </div>
     </div>
-    <div class="risk-item">
-      <label for="static-training-pre-solo">Training Pre-solo student:</label>
-      <input type="checkbox" class="static-risk" value="3" id="static-training-pre-solo" name="static-training-pre-solo">
-    </div>
-    <div class="risk-item">
-      <label for="static-solo-student">SOLO student:</label>
-      <input type="checkbox" class="static-risk" value="3" id="static-solo-student" name="static-solo-student">
-    </div>
-    <div class="risk-item">
-      <label for="static-dpe-check">DPE or Check flight:</label>
-      <input type="checkbox" class="static-risk" value="2" id="static-dpe-check" name="static-dpe-check">
-    </div>
-    <div class="risk-item">
-      <label for="imsafe-risk">IMSAFE (each factor counts 1):</label>
-      <input type="number" id="imsafe-risk" name="imsafe-risk" min="0" max="6" value="0">
-    </div>
-    <div class="risk-item">
-      <label for="static-first-fly-fi">First fly with FI:</label>
-      <input type="checkbox" class="static-risk" value="1" id="static-first-fly-fi" name="static-first-fly-fi">
-    </div>
-    <div class="risk-item">
-      <label for="static-different-model">Different model:</label>
-      <input type="checkbox" class="static-risk" value="1" id="static-different-model" name="static-different-model">
-    </div>
-    <div class="risk-item">
-      <label for="static-last-flight-30">Last flight &gt;30 days:</label>
-      <input type="checkbox" class="static-risk" value="1" id="static-last-flight-30" name="static-last-flight-30">
-    </div>
-    <div class="risk-item">
-      <label for="static-acft-time-40">Aircraft time &lt; 40 hours (Rated):</label>
-      <input type="checkbox" class="static-risk" value="1" id="static-acft-time-40" name="static-acft-time-40">
-    </div>
-    <div class="risk-item">
-      <label for="static-fi-dual-200">FI &lt; 200 hours Dual given:</label>
-      <input type="checkbox" class="static-risk" value="1" id="static-fi-dual-200" name="static-fi-dual-200">
-    </div>
-    <h3>🌪️ Dynamic Risk</h3>
-    <div class="risk-item">
-      <label for="dynamic-night-ops">Night ops:</label>
-      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-night-ops" name="dynamic-night-ops">
-    </div>
-    <div class="risk-item">
-      <label for="dynamic-last-night-30">Last night &gt;30 days:</label>
-      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-last-night-30" name="dynamic-last-night-30">
-    </div>
-    <div class="risk-item">
-      <label for="dynamic-svfr">SVFR:</label>
-      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-svfr" name="dynamic-svfr">
-    </div>
-    <div class="risk-item">
-      <label for="dynamic-stall-training">STALL Training:</label>
-      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-stall-training" name="dynamic-stall-training">
-    </div>
-    <div class="risk-item">
-      <label for="dynamic-spin-training">SPIN Training:</label>
-      <input type="checkbox" class="dynamic-risk" value="2" id="dynamic-spin-training" name="dynamic-spin-training">
-    </div>
-    <div class="risk-item">
-      <label for="dynamic-gust-spread">Gust spread &gt; 13 kt:</label>
-      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-gust-spread" name="dynamic-gust-spread">
-    </div>
-    <div class="risk-item">
-      <label for="dynamic-other-fi-cancel">Other FI cancellation due to WX:</label>
-      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-other-fi-cancel" name="dynamic-other-fi-cancel">
-    </div>
-    <div class="risk-item">
-      <label for="dynamic-max-fuel-flight">Max fuel flight:</label>
-      <input type="checkbox" class="dynamic-risk" value="1" id="dynamic-max-fuel-flight" name="dynamic-max-fuel-flight">
-    </div>
-    <!-- 新增 Full down auto 选项 -->
-     <div class="risk-item">
-      <label for="full-down-auto">Full down auto:</label>
-      <input type="checkbox" class="dynamic-risk" value="1" id="full-down-auto" name="full-down-auto">
-    </div>
-      <div class="risk-item">
-      <label for="other-risk">Other Risks:</label>
-      <input type="number" class="dynamic-risk" name="other-risk" min="0" max="5" value="0">
+            <!-- Risk Discussion / Comments section at page bottom -->
+    <div class="section inline-label-input">
+      <label class="label" for="riskComments"><strong>🗒️ Risk Discussion / Comments</strong></label>
+      <textarea id="riskComments" rows="3" class="input-field" placeholder="Notes from discussion with senior/chief pilot..."></textarea>
     </div>
     <div id="totalRiskScore" style="font-weight:bold; margin-top:10px;">
       Total Risk Score: <span id="riskScoreValue">0</span>
@@ -353,11 +255,6 @@
     </div>
     <div style="text-align: center; margin-top: 2rem;">
       <button id="generateReportBtn">Generate Flight Brief Report</button>
-    </div>
-    <!-- Risk Discussion / Comments section at page bottom -->
-    <div class="section">
-      <label for="riskComments"><strong>🗒️ Risk Discussion / Comments</strong></label><br>
-      <textarea id="riskComments" rows="3" placeholder="Notes from discussion with senior/chief pilot..." style="width: 100%; margin-top: 5px;"></textarea>
     </div>
   </div>
 
@@ -501,6 +398,10 @@ document.getElementById('calculateDA').addEventListener('click', () => {
 
   resultDiv.textContent = `Estimated Density Altitude: ${da.toLocaleString()} ft (using Altimeter ${latestAltimeter} inHg)`;
 });
+//计算剩余时间
+const mxNow = parseFloat(document.getElementById("mx-now")?.value || 0);
+const mxDue = parseFloat(document.getElementById("mx-due")?.value || 0);
+const mxRemaining = (mxDue - mxNow).toFixed(1); // 保留一位小数
 
 // --- Risk Assessment Calculation (new version) ---
 function updateRiskScore() {
@@ -566,6 +467,37 @@ function checkWithinLimits() {
 }
 </script>
 <script>
+// ETE Calculation Logic
+function calculateETE() {
+  const etd = document.getElementById('etd').value;
+  const eta = document.getElementById('eta').value;
+  const eteField = document.getElementById('ete');
+
+  if (etd && eta) {
+    const [etdH, etdM] = etd.split(':').map(Number);
+    const [etaH, etaM] = eta.split(':').map(Number);
+
+    let etdMinutes = etdH * 60 + etdM;
+    let etaMinutes = etaH * 60 + etaM;
+
+    // Handle next-day arrival
+    if (etaMinutes < etdMinutes) {
+      etaMinutes += 24 * 60;
+    }
+
+    const eteMinutes = etaMinutes - etdMinutes;
+    const eteHoursDecimal = (eteMinutes / 60).toFixed(2);
+
+    eteField.value = eteHoursDecimal;
+  } else {
+    eteField.value = '';
+  }
+}
+
+document.getElementById('etd').addEventListener('change', calculateETE);
+document.getElementById('eta').addEventListener('change', calculateETE);
+</script>
+<script>
 // Generate Flight Brief Report Button Logic
 document.getElementById("generateReportBtn").addEventListener("click", function () {
   // Check for within limits confirmation
@@ -574,91 +506,170 @@ document.getElementById("generateReportBtn").addEventListener("click", function 
     alert("Please enter 'within limits' to confirm weight & CG limits.");
     return;
   }
-  // Try to get both possible pilot names (student/instructor)
+  // Gather required info
   const pilotName = document.getElementById("studentName")?.value || '';
   const instructorName = document.getElementById("instructorName")?.value || '';
   const date = document.getElementById("flightDate")?.value || '';
   const tailNumber = document.getElementById("aircraftId")?.value || '';
   const fuelOnBoard = document.getElementById("fuel")?.value || '';
-  // ETE is not present, so leave blank
-  const ete = '';
-
   const dep = document.getElementById("departure")?.value || '';
   const arr = document.getElementById("arrival")?.value || '';
   const eta = document.getElementById("eta")?.value || '';
   const etd = document.getElementById("etd")?.value || '';
-
+  const lessonPractice = document.getElementById("lessonPractice")?.value || '';
   const da = document.getElementById("daResult")?.textContent || '';
   const wnbGross = document.getElementById("grossWeight")?.value || '';
   const wnbFuelTime = document.getElementById("fuelTime")?.value || '';
-  const riskScore = document.getElementById("riskScoreValue")?.textContent || '';
-  const riskCategory = document.getElementById("riskScoreLevel")?.textContent || '';
-  const riskAdvice = document.getElementById("riskRecommendation")?.textContent || '';
   const weatherNotes = document.getElementById("weatherNotes")?.value || '';
-  const lessonPractice = document.getElementById("lessonPractice")?.value || '';
   const riskComments = document.getElementById("riskComments")?.value || '';
 
-  const reportWindow = window.open("", "_blank");
-  // Compose the report content template literal
-  const reportContent = `
-    <!DOCTYPE html>
-    <html>
+  // 1. Flight Rules
+  const flightRulesSel = document.getElementById('flight-rules');
+  const flightRules = flightRulesSel ? flightRulesSel.options[flightRulesSel.selectedIndex].value : '';
+
+  // 2. ETD, ETA, ETE
+  // ETE: recalculate here to be sure
+  let eteStr = '';
+  if (etd && eta) {
+    const [etdH, etdM] = etd.split(':').map(Number);
+    const [etaH, etaM] = eta.split(':').map(Number);
+    let etdMinutes = etdH * 60 + etdM;
+    let etaMinutes = etaH * 60 + etaM;
+    if (etaMinutes < etdMinutes) etaMinutes += 24 * 60;
+    const eteMinutes = etaMinutes - etdMinutes;
+    const eteHoursDecimal = (eteMinutes / 60).toFixed(2);
+    eteStr = eteHoursDecimal;
+  }
+
+  // 3. Static Risk & Dynamic Risk
+  // Static Risk: checkboxes
+  const staticRiskCheckboxes = Array.from(document.querySelectorAll('.static-risk[type="checkbox"]'));
+  let staticRiskItems = [];
+  let staticRiskScore = 0;
+  staticRiskCheckboxes.forEach(cb => {
+    if (cb.checked) {
+      const label = cb.parentElement.querySelector('label');
+      staticRiskItems.push(`- ${label ? label.textContent.replace(/:$/, '') : cb.name} [${cb.value}]`);
+      staticRiskScore += parseInt(cb.value);
+    }
+  });
+  // IMSAFE
+  const imsafeValue = parseInt(document.getElementById('imsafe-risk').value) || 0;
+  staticRiskScore += imsafeValue;
+
+  // Dynamic Risk: checkboxes and number
+  const dynamicRiskCheckboxes = Array.from(document.querySelectorAll('.dynamic-risk[type="checkbox"]'));
+  let dynamicRiskItems = [];
+  let dynamicRiskScore = 0;
+  dynamicRiskCheckboxes.forEach(cb => {
+    if (cb.checked) {
+      const label = cb.parentElement.querySelector('label');
+      dynamicRiskItems.push(`- ${label ? label.textContent.replace(/:$/, '') : cb.name} [${cb.value}]`);
+      dynamicRiskScore += parseInt(cb.value);
+    }
+  });
+  // "Other Risks" (number input in dynamic-risk)
+  let otherRisksValue = 0;
+  document.querySelectorAll('.dynamic-risk[type="number"]').forEach(input => {
+    const val = parseInt(input.value) || 0;
+    if (val > 0) {
+      const label = input.parentElement.querySelector('label');
+      dynamicRiskItems.push(`- ${label ? label.textContent.replace(/:$/, '') : input.name} [${val}]`);
+      otherRisksValue += val;
+      dynamicRiskScore += val;
+    }
+  });
+
+  // 4. IMSAFE & Other Risks (already included above)
+  // riskScore, riskCategory, riskAdvice
+  const riskScore = staticRiskScore + dynamicRiskScore;
+  let riskCategory = '';
+  let riskAdvice = '';
+  if (riskScore <= 10) {
+    riskCategory = '🟢 LOW RISK';
+    riskAdvice = 'Risk acceptable after discussion. Flight may proceed.';
+  } else if (riskScore > 10 && riskScore <= 15) {
+    riskCategory = '🟡 MODERATE RISK';
+    riskAdvice = 'Consult with senior or chief instructor to discuss risk mitigation. May proceed after reduction.';
+  } else {
+    riskCategory = '🔴 HIGH RISK';
+    riskAdvice = 'Flight requires Chief Pilot approval. Discuss flight plan in detail.';
+  }
+
+  // Compose printable report
+  let reportText = `=== PilotSeal Flight Brief Report ===
+
+PF: ${pilotName}
+PIC: ${instructorName}
+Date: ${date}
+Aircraft: ${tailNumber}
+Fuel: ${fuelOnBoard}
+
+Flight Rules: ${flightRules}
+
+ETD: ${etd}
+ETA: ${eta}
+ETE: ${eteStr ? eteStr + ' hours' : ''}
+
+Departure: ${dep}
+Arrival: ${arr}
+Lesson Practice: ${lessonPractice}
+
+📝 Notes / NOTAMs:
+${weatherNotes}
+
+Density Altitude: ${da}
+Gross Weight: ${wnbGross}
+Fuel Time: ${wnbFuelTime}
+Mx Remaining:${mxRemaining}
+
+🪨 Static Risk:
+${staticRiskItems.length ? staticRiskItems.join('\n') : '- None'}
+Total Static Risk Score: ${staticRiskScore}
+
+🌪️ Dynamic Risk:
+${dynamicRiskItems.length ? dynamicRiskItems.join('\n') : '- None'}
+Total Dynamic Risk Score: ${dynamicRiskScore}
+
+IMSAFE: ${imsafeValue}
+Other Risks: ${otherRisksValue}
+
+Total Risk Score: ${riskScore}
+Category: ${riskCategory}
+Advice: ${riskAdvice}
+
+🗒️ Risk Discussion / Comments:
+${riskComments}
+`;
+
+  // Use a print area if exists, otherwise open new window
+  let printArea = document.querySelector('.print-area');
+  if (!printArea) {
+    // fallback: open new window for print
+    const reportWindow = window.open("", "_blank");
+    reportWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
       <head>
-        <title>Flight Brief Report</title>
+        <title>PilotSeal Flight Brief Report</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 2rem; line-height: 1.5; }
-          h2 { border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
-          .section { margin-bottom: 2rem; }
+          body { font-family: 'Consolas', 'Menlo', 'Monaco', monospace; white-space: pre-wrap; margin: 2em; }
+          h1 { font-size: 1.6em; font-weight: bold; margin-bottom: 1em; }
         </style>
       </head>
       <body>
-        <h1>Flight Brief Report</h1>
-        <div class="section">
-          <h2>Basic Info</h2>
-          <p><strong>Student Name:</strong> ${pilotName}</p>
-          <p><strong>Instructor Name:</strong> ${instructorName}</p>
-          <p><strong>Date:</strong> ${date}</p>
-          <p><strong>Aircraft:</strong> ${tailNumber}</p>
-          <p><strong>Fuel:</strong> ${fuelOnBoard}</p>
-          <p><strong>ETE:</strong> ${ete}</p>
-        </div>
-        <div class="section">
-          <h2>Route and Lesson</h2>
-          <p><strong>Departure:</strong> ${dep}</p>
-          <p><strong>Arrival:</strong> ${arr}</p>
-          <p><strong>ETD:</strong> ${etd}</p>
-          <p><strong>ETA:</strong> ${eta}</p>
-          <p><strong>Lesson Practice:</strong> ${lessonPractice}</p>
-        </div>
-        <div class="section">
-          <h2>Weather</h2>
-          <p><strong>Density Altitude:</strong> ${da}</p>
-          <div id="preview-weather-notes-section" style="margin-top: 10px;">
-            <h4>📝 Notes / NOTAMs</h4>
-            <p id="preview-weather-notes">${weatherNotes}</p>
-          </div>
-        </div>
-        <div class="section">
-          <h2>Weight & Balance</h2>
-          <p><strong>Gross Weight:</strong> ${wnbGross}</p>
-          <p><strong>Fuel Time:</strong> ${wnbFuelTime}</p>
-        </div>
-        <div class="section">
-          <h2>Risk Assessment</h2>
-          <p><strong>Total Risk Score:</strong> ${riskScore}</p>
-          <p><strong>Category:</strong> ${riskCategory}</p>
-          <p><strong>Advice:</strong> ${riskAdvice}</p>
-        </div>
-        <div class="section">
-          <h2>Risk Discussion / Comments</h2>
-          <p>${riskComments}</p>
-        </div>
+        <pre>${reportText.replace(/</g, '&lt;')}</pre>
+        
       </body>
-    </html>
-  `;
-  reportWindow.document.write(reportContent);
-  reportWindow.document.close();
+      </html>
+    `);
+    reportWindow.document.close();
+  } else {
+    printArea.innerText = reportText;
+    //window.print();
+  }
 });
 </script>
 </body>
 </html>
+</div>

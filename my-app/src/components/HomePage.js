@@ -1,31 +1,78 @@
-// src/components/HomePage.js
 import React from 'react';
-import styles from '../css/HomePage.module.css'; // 导入 CSS 模块
+import { useNavigate } from 'react-router-dom';
+import styles from '../css/HomePage.module.css';
+
+const features = [
+  {
+    icon: "✅",
+    title: "Endorsement Generator",
+    description: "Generate FAA-compliant logbook endorsements quickly.",
+    link: "/endorsement-generator",
+    comingSoon: false,
+    image: require('../images/feature1.png')
+  },
+  {
+    icon: "📋",
+    title: "Flight Brief Tool",
+    description: "Preflight planning, risk assessment, weather, W&B and more.",
+    link: "/flight-brief",
+    comingSoon: false,
+    image: require('../images/feature2.png')
+  },
+  {
+    icon: "📁",
+    title: "Logbook Tools",
+    description: "Organize and export your training logs. (Coming Soon)",
+    link: "#",
+    comingSoon: true,
+    image: require('../images/feature3.png')
+  },
+];
 
 const HomePage = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className={styles.container}>
-      <section className={styles.hero}>
-        <p className={styles.minimalTagline}>Your toolkit for efficient and compliant FAA endorsements.</p>
-      </section>
+    <div className={styles.heroWrapper}>
+      <div className={styles.heroContent}>
+        <p className={styles.tagline}>
+          All-in-one tools for flight instructors and students
+        </p>
+        <div className={styles.ctaButtons}>
+          <button
+            className={styles.primaryBtn}
+            onClick={() => {
+              const target = document.getElementById('features');
+              target?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            Get Started
+          </button>
+          <button className={styles.secondaryBtn} onClick={() => navigate('/about')}>Learn More</button>
+        </div>
+      </div>
 
-      <section className={styles.introSection}>
-        <p className={styles.intro}>
-          This platform was built to eliminate the hassle of generating FAA endorsements. Designed for flight instructors, students, and aviation enthusiasts, it streamlines the endorsement process and ensures compliance with Part 61.
-        </p>
-        <p className={styles.experience}>
-          Integrated with practical tools and optimized for daily use, it offers flexibility, precision, and ease of access—whether you're preparing for a lesson or documenting progress.
-        </p>
-        <p className={styles.conclusion}>
-          Explore the Logbook, Weight and Balance, and Endorsement Generator using the navigation links above.
-        </p>
-      </section>
-
-      <section className={styles.introSection}>
-        <p className={styles.authorNote}>
-          👨‍✈️ Created by <a href="https://ruben.pilotseal.com" target="_blank" rel="noopener noreferrer">Ruben</a> – check out his work and aviation insights.
-        </p>
-      </section>
+      <div id="features" className={styles.featureSection}>
+        {features.map((feature, index) => (
+          <div key={index} className={styles.card}>
+            <img src={feature.image} alt={feature.title} />
+            <div className={styles.cardContent}>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+              {feature.comingSoon ? (
+                <span className={styles.comingSoon}>Coming Soon</span>
+              ) : (
+                <button
+                  className={styles.cardBtn}
+                  onClick={() => navigate(feature.link)}
+                >
+                  Try Now →
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
