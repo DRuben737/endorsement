@@ -5,6 +5,7 @@
   font-size: 1.5rem;
   cursor: pointer;
   color: #444;
+  margin-left: auto;
 }
 .app-header {
   background-color: #f9fafb;
@@ -24,6 +25,14 @@
 .header-left {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.header-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .logo {
@@ -97,9 +106,9 @@
 /* Mobile-friendly header logo/title layout */
 @media (max-width: 640px) {
   .header-left {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 4px;
+    width: 100%;
   }
 
   .logo {
@@ -110,5 +119,10 @@
   .title-link {
     font-size: 2rem;
     text-align: center;
+  }
+
+  .menu-toggle {
+    margin-left: 0;
+    margin-right: 0;
   }
 }
