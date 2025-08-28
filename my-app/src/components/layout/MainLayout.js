@@ -5,7 +5,6 @@ import Footer from './Footer';
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-
   return (
     <div className="App">
       <div className="background"></div>
