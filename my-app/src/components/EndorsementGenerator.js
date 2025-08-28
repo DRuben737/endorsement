@@ -6,12 +6,14 @@ import '../css/EndorsementGenerator.css';
 import styles from '../css/EndorsementGenerator.module.css'; // 导入 CSS 模块
 
 function EndorsementGenerator() {
-  const [instructorName, setInstructorName] = useState('');
-  const [instructorCertNumber, setInstructorCertNumber] = useState('');
-  const [instructorCertExpDate, setInstructorCertExpDate] = useState('');
-  const [studentName, setStudentName] = useState('');
-  const [studentCertNumber, setStudentCertNumber] = useState('');
-  const [date, setDate] = useState('');
+  const [formData, setFormData] = useState({
+    instructorName: '',
+    instructorCertNumber: '',
+    instructorCertExpDate: '',
+    studentName: '',
+    studentCertNumber: '',
+    date: '',
+  });
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const handleClearSelection = () => {
     setSelectedTemplates([]); // 清空所选模板
@@ -59,6 +61,15 @@ function EndorsementGenerator() {
       alert('Please select at least one template before generating the PDF.');
       return;
     }
+  
+    const {
+      instructorName,
+      instructorCertNumber,
+      instructorCertExpDate,
+      studentName,
+      studentCertNumber,
+      date,
+    } = formData;
   
     const userConfirmed = window.confirm(`
       Please verify the information before generating the PDF:
@@ -216,44 +227,48 @@ function EndorsementGenerator() {
     closeModal();
   };
 
+  const handleChange = (field) => (e) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
   return (
     <>
       <div className={styles.inputSection}>
       <input
         type="text"
         placeholder="Instructor Name"
-        value={instructorName}
-        onChange={(e) => setInstructorName(e.target.value)}
+        value={formData.instructorName}
+        onChange={handleChange('instructorName')}
       />
       <input
         type="text"
         placeholder="Instructor Cert Number"
-        value={instructorCertNumber}
-        onChange={(e) => setInstructorCertNumber(e.target.value)}
+        value={formData.instructorCertNumber}
+        onChange={handleChange('instructorCertNumber')}
       />
       <input
         type="text"
         placeholder="Instructor Cert Exp Date (MM/DD/YYYY)"
-        value={instructorCertExpDate}
-        onChange={(e) => setInstructorCertExpDate(e.target.value)}
+        value={formData.instructorCertExpDate}
+        onChange={handleChange('instructorCertExpDate')}
       />
       <input
         type="text"
         placeholder="Student Name"
-        value={studentName}
-        onChange={(e) => setStudentName(e.target.value)}
+        value={formData.studentName}
+        onChange={handleChange('studentName')}
       />
       <input
         type="text"
         placeholder="Student Cert Number (optional)"
-        value={studentCertNumber}
-        onChange={(e) => setStudentCertNumber(e.target.value)}
+        value={formData.studentCertNumber}
+        onChange={handleChange('studentCertNumber')}
       />
       <input
         type="text"
         placeholder="Date (MM/DD/YYYY)"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
+        value={formData.date}
+        onChange={handleChange('date')}
       />
       </div>
       <div className={styles.buttonSection}>
