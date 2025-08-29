@@ -6,6 +6,7 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "sitemap": "^8.0.0"
   }
 }
