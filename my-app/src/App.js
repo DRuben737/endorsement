@@ -16,29 +16,22 @@ Modal.setAppElement('#root');
 
 function App() {
   return (
-    <div className="app-wrapper">
-      <div className="main-content">
-        <Routes>
-          <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
-          <Route path="/logbook" element={<MainLayout><Logbook /></MainLayout>} />
-          <Route path="/endorsement-generator" element={<MainLayout><EndorsementGenerator /></MainLayout>} />
-          <Route path="/flight-brief" element={<MainLayout><FlightBrief /></MainLayout>} />
-          <Route path="/home" element={<MainLayout><HomePage /></MainLayout>} />
-          <Route path="/about" element={<MainLayout><About /></MainLayout>} />
-          <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
-        </Routes>
-      </div>
-    </div>
-  );
-}
-
-// Wrap App with Router to provide routing context for useLocation
-function AppWithRouter() {
-  return (
     <Router>
-      <App />
+      <MainLayout>
+        <div className="main-content">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/logbook" element={<Logbook />} />
+            <Route path="/endorsement-generator" element={<EndorsementGenerator />} />
+            <Route path="/flight-brief" element={<FlightBrief />} />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/privacy" element={<Privacy />} />
+          </Routes>
+        </div>
+      </MainLayout>
     </Router>
   );
 }
 
-export default AppWithRouter;
+export default App;

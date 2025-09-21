@@ -46,6 +46,18 @@ function About() {
           📧 <a href="mailto:aviation.ruben@gmail.com">aviation.ruben@gmail.com</a>
         </p>
       </section>
+
+      <section>
+        <h3>🙏 Acknowledgments</h3>
+        <p>
+          Special thanks to <strong>
+            Stephane Rebeix (
+            <a href="https://usatsflighttraining.com/" target="_blank" rel="noopener noreferrer">
+                U.S. Aviation Training Solutions
+            </a>)
+          </strong> for his mentorship and support. His dedication to aviation education and safety has been a guiding influence in the creation of Pilot Seal.
+        </p>
+      </section>
     </div>
   );
 }
