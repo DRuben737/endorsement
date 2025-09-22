@@ -10,6 +10,7 @@ import About from './components/About';
 import Privacy from './components/Privacy';
 import Modal from 'react-modal';
 import MainLayout from './components/layout/MainLayout';
+import Decoder from './components/Decoder';
 
 // For accessibility reasons, bind modal to appElement
 Modal.setAppElement('#root');
@@ -25,6 +26,7 @@ function App() {
         <Route path="/home" element={<MainLayout><HomePage /></MainLayout>} />
         <Route path="/about" element={<MainLayout><About /></MainLayout>} />
         <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
+        <Route path="/decoder" element={<MainLayout><Decoder /></MainLayout>} />
       </Routes>
     </Router>
   );

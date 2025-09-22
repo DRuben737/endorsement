@@ -41,7 +41,7 @@ function Header() {
       <div className="header-right" ref={navRef}>
         <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
           <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
-          <Link to="/logbook" onClick={() => setMenuOpen(false)}>Logbook</Link>
+          <Link to="/decoder" onClick={() => setMenuOpen(false)}>Decoder</Link>
           <Link to="/endorsement-generator" onClick={() => setMenuOpen(false)}>Generate Endorsement</Link>
           <Link to="/flight-brief" onClick={() => setMenuOpen(false)}>Flight Brief</Link>
         </nav>
