@@ -27,6 +27,11 @@ function EndorsementGenerator() {
 useEffect(() => {
   const canvas = canvasRef.current;
   const ctx = canvas.getContext('2d');
+  // 修正绘图缩放比例，确保触控/鼠标坐标和实际绘图区域一致
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = canvas.offsetHeight * ratio;
+  ctx.scale(ratio, ratio);
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
 
