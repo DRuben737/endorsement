@@ -24,53 +24,75 @@ function EndorsementGenerator() {
 
   const canvasRef = useRef(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+useEffect(() => {
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
 
-    let drawing = false;
+  let drawing = false;
 
-    const getOffset = (e) => {
-      const rect = canvas.getBoundingClientRect();
+  const getOffset = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    if (e.touches && e.touches.length > 0) {
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top,
+      };
+    } else {
       return {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       };
-    };
+    }
+  };
 
-    const startDraw = (e) => {
-      drawing = true;
-      const { x, y } = getOffset(e);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    };
+  const startDraw = (e) => {
+    e.preventDefault();
+    drawing = true;
+    const { x, y } = getOffset(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
 
-    const draw = (e) => {
-      if (!drawing) return;
-      const { x, y } = getOffset(e);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    };
+  const draw = (e) => {
+    if (!drawing) return;
+    e.preventDefault();
+    const { x, y } = getOffset(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
 
-    const endDraw = () => {
-      drawing = false;
-      ctx.closePath();
-    };
+  const endDraw = (e) => {
+    e.preventDefault();
+    drawing = false;
+    ctx.closePath();
+  };
 
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', endDraw);
-    canvas.addEventListener('mouseleave', endDraw);
+  // 鼠标事件
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
 
-    return () => {
-      canvas.removeEventListener('mousedown', startDraw);
-      canvas.removeEventListener('mousemove', draw);
-      canvas.removeEventListener('mouseup', endDraw);
-      canvas.removeEventListener('mouseleave', endDraw);
-    };
-  }, []);
+  // 触控事件
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', endDraw, { passive: false });
+  canvas.addEventListener('touchcancel', endDraw, { passive: false });
+
+  return () => {
+    canvas.removeEventListener('mousedown', startDraw);
+    canvas.removeEventListener('mousemove', draw);
+    canvas.removeEventListener('mouseup', endDraw);
+    canvas.removeEventListener('mouseleave', endDraw);
+
+    canvas.removeEventListener('touchstart', startDraw);
+    canvas.removeEventListener('touchmove', draw);
+    canvas.removeEventListener('touchend', endDraw);
+    canvas.removeEventListener('touchcancel', endDraw);
+  };
+}, []);
 
   const sanitizeText = (text) => {
     return text.replace(/\t/g, ' ').replace(/[\u{0080}-\u{FFFF}]/gu, ''); // Replace tabs with spaces and remove non-standard characters
@@ -353,7 +375,7 @@ function EndorsementGenerator() {
       </div>
 
       <div className={styles.signaturePad}>
-        <p>Draw your signature:</p>
+        <p>Draw your signature(or leave it blank, sign it later):</p>
         <canvas
           ref={canvasRef}
           width={500}
