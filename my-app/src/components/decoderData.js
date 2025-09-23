@@ -17,11 +17,7 @@ const decoderData = [
   { contraction: "PNO", definition: "precipitation amount not available", usage: "METAR" },
   { contraction: "PO", definition: "dust/sand whirls (dust devils)", usage: "METAR" },
   { contraction: "SCSL", definition: "stratocumulus standing lenticular cloud", usage: "METAR" },
-  { contraction: "nan", definition: "nan", usage: "nan" },
-  { contraction: "nan", definition: "nan", usage: "nan" },
-  { contraction: "nan", definition: "nan", usage: "nan" },
-  { contraction: "nan", definition: "nan", usage: "nan" },
-  { contraction: "nan", definition: "nan", usage: "nan" },
+
   { contraction: "+FC", definition: "tornado/water spout", usage: "METAR" },
   { contraction: "A", definition: "absolute (temperature)", usage: "NWS" },
   { contraction: "A", definition: "Alaskan Standard Time (time groups only)", usage: "NWS" },

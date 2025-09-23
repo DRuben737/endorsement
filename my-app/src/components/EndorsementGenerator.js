@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Modal from 'react-modal';
 import templates from '../templates';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -21,6 +21,56 @@ function EndorsementGenerator() {
   
   const [pdfUrl, setPdfUrl] = useState('');
   const [selectedTemplates, setSelectedTemplates] = useState([]);
+
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+
+    let drawing = false;
+
+    const getOffset = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
+    };
+
+    const startDraw = (e) => {
+      drawing = true;
+      const { x, y } = getOffset(e);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    };
+
+    const draw = (e) => {
+      if (!drawing) return;
+      const { x, y } = getOffset(e);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    };
+
+    const endDraw = () => {
+      drawing = false;
+      ctx.closePath();
+    };
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+
+    return () => {
+      canvas.removeEventListener('mousedown', startDraw);
+      canvas.removeEventListener('mousemove', draw);
+      canvas.removeEventListener('mouseup', endDraw);
+      canvas.removeEventListener('mouseleave', endDraw);
+    };
+  }, []);
 
   const sanitizeText = (text) => {
     return text.replace(/\t/g, ' ').replace(/[\u{0080}-\u{FFFF}]/gu, ''); // Replace tabs with spaces and remove non-standard characters
@@ -96,6 +146,13 @@ function EndorsementGenerator() {
       const boxWidth = 280;
       const boxPadding = 5; // Padding between text and box
 
+      // Embed signature image from canvas
+      const canvas = canvasRef.current;
+      const dataUrl = canvas.toDataURL('image/png');
+      const signatureImageBytes = await fetch(dataUrl).then(res => res.arrayBuffer());
+      const signatureImage = await doc.embedPng(signatureImageBytes);
+      const signatureDims = signatureImage.scale(0.5);
+
       // 2-column layout, dynamic row count per page
       let x = margin;
       let y = height - margin;
@@ -117,7 +174,7 @@ function EndorsementGenerator() {
         const lines = splitTextIntoLines(content, font, fontSize, maxWidth);
         const lineHeight = 1.15 * fontSize;
         const textHeight = lines.length * lineHeight;
-        const boxHeight = textHeight + 0.9 * boxPadding;
+        const boxHeight = textHeight + 2 * boxPadding;
 
         // Center the two-column layout
         const pageWidth = 612;
@@ -153,6 +210,29 @@ function EndorsementGenerator() {
           });
           textY -= lineHeight;
         }
+
+        // 找到最后一行的位置
+        const finalLineY = textY - lineHeight;
+
+        // 在末尾写入 “Signature:” 字样
+        page.drawText("Signature:", {
+          x: x,
+          y: finalLineY,
+          size: fontSize,
+          font: font,
+        });
+
+        // 缩小签名图像尺寸
+        const scaledWidth = 50;
+        const scaledHeight = (signatureDims.height / signatureDims.width) * scaledWidth;
+
+        // 插入签名图像在 “Signature:” 后面
+        page.drawImage(signatureImage, {
+          x: x + 55,  // “Signature:” 之后约5mm处
+          y: finalLineY - 2,
+          width: scaledWidth,
+          height: scaledHeight,
+        });
 
         col++;
         if (col >= columns) {
@@ -271,6 +351,28 @@ function EndorsementGenerator() {
         onChange={handleChange('date')}
       />
       </div>
+
+      <div className={styles.signaturePad}>
+        <p>Draw your signature:</p>
+        <canvas
+          ref={canvasRef}
+          width={500}
+          height={160}
+          style={{ 
+            border: '1px solid #ccc',
+            background: '#fff',
+            maxWidth: '100%',
+            touchAction: 'none'  // 禁止移动端滚动干扰签名
+          }}
+        ></canvas>
+        <div>
+          <button onClick={() => {
+            const ctx = canvasRef.current.getContext('2d');
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          }}>Clear</button>
+        </div>
+      </div>
+
       <div className={styles.buttonSection}>
       <button onClick={openModal}>Select Endorsement</button>
       <button onClick={handleGeneratePDF}>Generate PDF</button>
