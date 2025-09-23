@@ -27,10 +27,12 @@ function EndorsementGenerator() {
 useEffect(() => {
   const canvas = canvasRef.current;
   const ctx = canvas.getContext('2d');
-  // 修正绘图缩放比例，确保触控/鼠标坐标和实际绘图区域一致
+  // 重新设置画布大小和缩放比例
   const ratio = window.devicePixelRatio || 1;
-  canvas.width = canvas.offsetWidth * ratio;
-  canvas.height = canvas.offsetHeight * ratio;
+  const displayWidth = canvas.offsetWidth;
+  const displayHeight = canvas.offsetHeight;
+  canvas.width = displayWidth * ratio;
+  canvas.height = displayHeight * ratio;
   ctx.scale(ratio, ratio);
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
@@ -383,11 +385,12 @@ useEffect(() => {
         <p>Draw your signature(or leave it blank, sign it later):</p>
         <canvas
           ref={canvasRef}
-          width={500}
-          height={160}
+          width={800}
+          height={300}
           style={{ 
             border: '1px solid #ccc',
             background: '#fff',
+            width: '100%',
             maxWidth: '100%',
             touchAction: 'none'  // 禁止移动端滚动干扰签名
           }}
