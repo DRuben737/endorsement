@@ -26,16 +26,19 @@ function EndorsementGenerator() {
 
 useEffect(() => {
   const canvas = canvasRef.current;
+  if (!canvas) return;
+
   const ctx = canvas.getContext('2d');
-  // 重新设置画布大小和缩放比例
   const ratio = window.devicePixelRatio || 1;
-  const displayWidth = canvas.offsetWidth;
-  const displayHeight = canvas.offsetHeight;
-  canvas.width = displayWidth * ratio;
-  canvas.height = displayHeight * ratio;
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = canvas.offsetHeight * ratio;
+  canvas.style.width = canvas.offsetWidth + 'px';
+  canvas.style.height = canvas.offsetHeight + 'px';
   ctx.scale(ratio, ratio);
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
   ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
 
   let drawing = false;
 
@@ -381,26 +384,22 @@ useEffect(() => {
       />
       </div>
 
-      <div className={styles.signaturePad}>
-        <p>Draw your signature(or leave it blank, sign it later):</p>
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={300}
-          style={{ 
-            border: '1px solid #ccc',
-            background: '#fff',
-            width: '100%',
-            maxWidth: '100%',
-            touchAction: 'none'  // 禁止移动端滚动干扰签名
-          }}
-        ></canvas>
-        <div>
-          <button onClick={() => {
-            const ctx = canvasRef.current.getContext('2d');
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          }}>Clear</button>
+      <div className={styles.signatureContainer}>
+        <p className={styles.signatureLabel}>Draw your signature (or leave blank and sign on paper):</p>
+        <div className={styles.signatureWrapper}>
+          <canvas
+            ref={canvasRef}
+            className={styles.signatureCanvas}
+            width={800}
+            height={300}
+          />
         </div>
+        <button className={styles.clearButton} onClick={() => {
+          const ctx = canvasRef.current.getContext('2d');
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        }}>
+          Clear
+        </button>
       </div>
 
       <div className={styles.buttonSection}>

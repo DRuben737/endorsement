@@ -19,9 +19,9 @@
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    width: calc(50% - 20px); /* 每行两个输入框，考虑间距 */
+    width: calc(33.33% - 20px); /* 每行三个输入框，考虑间距 */
     box-sizing: border-box;
-    min-width: 150px; /* 设置最小宽度 */
+    min-width: 150px;
   }
   
   /* 按钮部分样式 */
@@ -79,5 +79,65 @@
   }
   .inputSection input {
     width: 100%;
+  }
+}
+
+/* 签名区域样式 */
+.signatureContainer {
+  margin: 2rem auto;
+  max-width: 600px;
+  text-align: center;
+}
+
+.signatureLabel {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 8px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.signatureCanvas {
+  border: 2px dashed #999;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 100%;
+  height: 200px;
+  touch-action: none;
+  background-color: #fdfdfd;
+}
+
+.signatureButtons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.signatureButtons button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.signatureButtons button.clear {
+  background-color: #dc3545;
+}
+
+@media (max-width: 480px) {
+  .signatureCanvas {
+    height: 160px;
+  }
+
+  .signatureButtons {
+    flex-direction: column;
+  }
+
+  .signatureButtons button {
+    width: 90%;
   }
 }
