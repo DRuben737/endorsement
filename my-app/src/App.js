@@ -11,6 +11,7 @@ import Privacy from './components/Privacy';
 import Modal from 'react-modal';
 import MainLayout from './components/layout/MainLayout';
 import Decoder from './components/Decoder';
+import NightTimeCalculator from './components/NightTimeCalculator';
 
 // For accessibility reasons, bind modal to appElement
 Modal.setAppElement('#root');
@@ -27,6 +28,7 @@ function App() {
         <Route path="/about" element={<MainLayout><About /></MainLayout>} />
         <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
         <Route path="/decoder" element={<MainLayout><Decoder /></MainLayout>} />
+        <Route path="/nighttime" element={<MainLayout><NightTimeCalculator /></MainLayout>} />
       </Routes>
     </Router>
   );

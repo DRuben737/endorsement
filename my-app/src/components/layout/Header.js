@@ -44,6 +44,7 @@ function Header() {
           <Link to="/decoder" onClick={() => setMenuOpen(false)}>Decoder</Link>
           <Link to="/endorsement-generator" onClick={() => setMenuOpen(false)}>Generate Endorsement</Link>
           <Link to="/flight-brief" onClick={() => setMenuOpen(false)}>Flight Brief</Link>
+          <Link to="/nighttime" onClick={() => setMenuOpen(false)}>Night Flight</Link>
         </nav>
       </div>
     </header>

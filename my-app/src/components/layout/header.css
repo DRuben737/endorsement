@@ -53,6 +53,7 @@
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 .nav-links a {
   background-color: #0077cc;
@@ -124,5 +125,22 @@
   .menu-toggle {
     margin-left: 0;
     margin-right: 0;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 641px) {
+  .nav-links {
+    gap: 12px; /* 缩小按钮间距 */
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-links a {
+    font-size: 0.85rem; /* 缩小字体 */
+    padding: 6px 12px; /* 减少按钮内边距 */
+  }
+
+  .title-link {
+    font-size: 2.2rem; /* 调整标题字体 */
   }
 }
