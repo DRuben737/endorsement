@@ -28,23 +28,25 @@ export async function getSunTimes(locationOrLat, lonOrDate, maybeDate) {
   }
 
   const date = typeof dateInput === 'string'
-    ? DateTime.fromISO(dateInput).toJSDate()
-    : DateTime.fromJSDate(dateInput).toJSDate();
+    ? DateTime.fromISO(dateInput, { zone: 'utc' }).toJSDate()
+    : DateTime.fromJSDate(dateInput).setZone('utc').toJSDate();
 
   const times = SunCalc.getTimes(date, latitude, longitude);
 
-  const toLocal = (dt) => DateTime.fromJSDate(dt).toLocaleString(DateTime.TIME_SIMPLE);
+  const toUTC = (dt) => DateTime.fromJSDate(dt, { zone: 'utc' }).toFormat('HH:mm');
 
   return {
-    sunrise: toLocal(times.sunrise),
-    sunset: toLocal(times.sunset),
-    civilTwilightBegin: toLocal(times.dawn),
-    civilTwilightEnd: toLocal(times.dusk),
+    utc: {
+      sunrise: toUTC(times.sunrise),
+      sunset: toUTC(times.sunset),
+      civilDawn: toUTC(times.dawn),
+      civilDusk: toUTC(times.dusk),
+    },
     raw: {
       sunrise: times.sunrise,
       sunset: times.sunset,
-      civilTwilightBegin: times.dawn,
-      civilTwilightEnd: times.dusk,
+      civilDawn: times.dawn,
+      civilDusk: times.dusk,
     },
   };
 }
