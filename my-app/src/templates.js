@@ -22,6 +22,11 @@ I certify that {studentName} {studentCertNumber} has demonstrated satisfactory k
 Date: {date}           *
 {instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
 
+"Review of deficiencies on written":`
+I certify that {studentName} {studentCertNumber} has demonstrated satisfactory knowledge of the subject areas in which {studentName} was deficient on the ________________ airman knowledge test.
+Date: {date}           *
+{instructorName}           {instructorCertNumber}          Exp. {instructorCertExpDate}`,
+
 
 "Pre-solo Written test":`
 I certify that {studentName} {studentCertNumber} has satisfactorily completed the pre-solo knowledge test of § 61.87(b) for the __________(make & model).
