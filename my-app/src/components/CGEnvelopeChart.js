@@ -58,6 +58,21 @@ export default function CGEnvelopeChart({
   const xDomain = [Math.floor(minX - 0.5), Math.ceil(maxX + 0.5)];
   const yDomain = [Math.floor(minY - 100), Math.ceil(maxY + 100)];
 
+  // 动态生成横轴（CG）和纵轴（Weight）的刻度
+  const xTicks = [];
+  const xStart = Math.ceil(xDomain[0]);
+  const xEnd = Math.floor(xDomain[1]);
+  for (let x = xStart; x <= xEnd; x += 1) {
+    xTicks.push(x);
+  }
+
+  const yTicks = [];
+  const yStart = Math.ceil(yDomain[0] / 100) * 100;
+  const yEnd = Math.floor(yDomain[1] / 100) * 100;
+  for (let y = yStart; y <= yEnd; y += 100) {
+    yTicks.push(y);
+  }
+
   return (
     <div style={{ width: "100%", height: 350, marginTop: 20 }}>
       <h3>CG Envelope</h3>
@@ -69,10 +84,11 @@ export default function CGEnvelopeChart({
           <XAxis
             dataKey="x"
             type="number"
-            name="CG (in)"
-            label={{ value: "CG (in)", position: "bottom" }}
+            name="CG Location (in)"
+            label={{ value: "CG Location (in)", position: "bottom" }}
             xAxisId="x"
             domain={xDomain}
+            ticks={xTicks}
           />
 
           <YAxis
@@ -82,6 +98,7 @@ export default function CGEnvelopeChart({
             label={{ value: "Weight (lbs)", angle: -90, position: "insideLeft" }}
             yAxisId="y"
             domain={yDomain}
+            ticks={yTicks}
           />
 
           <Tooltip cursor={{ strokeDasharray: "3 3" }} />
