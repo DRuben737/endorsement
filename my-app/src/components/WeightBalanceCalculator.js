@@ -155,15 +155,18 @@ return (
       </div>
 
       {/* Right panel: result & chart */}
-{result && (
-  <div
-    style={{
-      flex: "1 1 320px",   // 把所有剩余空间都给右侧
-      minWidth: "280px",   // 不再强制最小宽度，由 flex 自己算
-      maxWidth: "700px",
-      
-    }}
-  >
+  {result && (
+<div
+  style={{
+  flex: "0 0 100%",   // 小屏：占满一整行
+  width: "100%",
+  maxWidth: "700px",
+  display: "flex",
+  flexDirection: "column",
+  marginLeft: "20px",
+  marginTop: "16px"
+}}
+>
           <div style={{ marginTop: "10px" }}>
             <h3>Result</h3>
             <p>Total Weight: {result.totalWeight.toFixed(1)} lbs</p>
