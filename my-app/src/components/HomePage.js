@@ -20,12 +20,12 @@ const features = [
     image: require('../images/feature2.png')
   },
   {
-    icon: "📁",
-    title: "Logbook Tools",
-    description: "Organize and export your training logs. (Coming Soon)",
-    link: "#",
-    comingSoon: true,
-    image: require('../images/feature3.png')
+    icon: "⚖️",
+    title: "Weight & Balance",
+    description: "Quick check before your roll",
+    link: "/wb",
+    comingSoon: false,
+    image: require('../images/feature4.png')
   },
 ];
 

@@ -6,44 +6,68 @@ function Privacy() {
     <div className="privacy-container">
       <div className="privacy-card">
         <h2>Privacy Policy</h2>
-        <p>At Pilot Seal, your privacy is important to us. This Privacy Policy explains what information we collect, how we use it, and your rights in relation to that information.</p>
+
+        <p>
+          Pilot Seal is a client-side tool designed for flight instructors and pilots. 
+          We respect your privacy and minimize the amount of information collected.
+        </p>
 
         <h3>1. Information We Collect</h3>
-        <p>We may collect the following types of information:</p>
+        <p>
+          Pilot Seal does not collect any personal information such as names, emails, 
+          passwords, flight entries, or aircraft data you type into the app.
+        </p>
+        <p>However, we use Google Analytics (GA4) to collect:</p>
         <ul>
-          <li>Personal identifiers such as name and email address (if voluntarily submitted)</li>
-          <li>Device and browser data (e.g., IP address, user agent)</li>
-          <li>Usage data such as page visits, session duration, and clicks, collected via Google Analytics</li>
+          <li>General device and browser information</li>
+          <li>Approximate location (country/region)</li>
+          <li>Pages visited and time on page</li>
+          <li>Anonymous usage patterns</li>
+        </ul>
+        <p>Google Analytics does <strong>not</strong> give us access to your identity or any personally identifiable information.</p>
+
+        <h3>2. How Data Is Used</h3>
+        <p>Analytics data is used only for:</p>
+        <ul>
+          <li>Improving website performance</li>
+          <li>Understanding which features users interact with</li>
+          <li>Fixing bugs and enhancing user experience</li>
         </ul>
 
-        <h3>2. How We Use Your Information</h3>
-        <p>The information collected is used to:</p>
+        <h3>3. What We Do NOT Collect</h3>
         <ul>
-          <li>Improve user experience and website performance</li>
-          <li>Monitor usage trends and fix bugs</li>
-          <li>Respond to user inquiries or feedback</li>
+          <li>No name, email, or account information</li>
+          <li>No flight logs you enter into the app</li>
+          <li>No payment or financial information</li>
+          <li>No cookies for advertising or user tracking outside GA4</li>
+          <li>No server-side storage — the app has no backend</li>
         </ul>
 
-        <h3>3. Cookies & Tracking</h3>
-        <p>We use cookies and similar tracking technologies to enhance your browsing experience. You can modify your browser settings to decline cookies if you prefer.</p>
+        <h3>4. Google Analytics</h3>
+        <p>
+          Google Analytics uses cookies and anonymized identifiers. 
+          You may disable cookies in your browser if you prefer  
+          or use Google’s “Opt-Out” browser add-on.
+        </p>
 
-        <h3>4. Data Sharing</h3>
-        <p>We do not sell your personal information. We may share anonymized data with analytics providers like Google Analytics to help us improve the site.</p>
+        <h3>5. Data Storage</h3>
+        <p>
+          Pilot Seal does not store any user-submitted data. 
+          All Weight & Balance calculations and text fields are processed 
+          locally in your browser.
+        </p>
 
-        <h3>5. Data Security</h3>
-        <p>We use reasonable technical and administrative measures to protect your information from unauthorized access, loss, or misuse.</p>
+        <h3>6. Changes to This Policy</h3>
+        <p>
+          We may update this policy in the future if new features are added. 
+          Changes will be posted on this page.
+        </p>
 
-        <h3>6. Your Rights</h3>
-        <p>You may have rights under applicable laws to access, correct, or delete your personal information. You can contact us for assistance.</p>
-
-        <h3>7. Changes to This Policy</h3>
-        <p>This Privacy Policy may be updated periodically. Changes will be posted on this page with the “Last Updated” date.</p>
-
-        <h3>8. Contact Us</h3>
-        <p>If you have any questions about this Privacy Policy, you can contact us at:</p>
+        <h3>7. Contact</h3>
+        <p>If you have questions about privacy, reach us at:</p>
         <p>Email: support@pilotseal.com</p>
 
-        <p style={{ fontStyle: 'italic' }}>Last Updated: August 25, 2025</p>
+        <p style={{ fontStyle: 'italic' }}>Last Updated: October 2025</p>
       </div>
     </div>
   );
