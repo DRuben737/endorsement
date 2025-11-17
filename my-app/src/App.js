@@ -12,6 +12,8 @@ import Modal from 'react-modal';
 import MainLayout from './components/layout/MainLayout';
 import Decoder from './components/Decoder';
 import NightTimeCalculator from './components/NightTimeCalculator';
+import WeightBalanceCalculator from "./components/WeightBalanceCalculator";
+
 
 // For accessibility reasons, bind modal to appElement
 Modal.setAppElement('#root');
@@ -29,6 +31,10 @@ function App() {
         <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
         <Route path="/decoder" element={<MainLayout><Decoder /></MainLayout>} />
         <Route path="/nighttime" element={<MainLayout><NightTimeCalculator /></MainLayout>} />
+        <Route path="/wb"element={<MainLayout><WeightBalanceCalculator />
+    </MainLayout>
+  }
+/>
       </Routes>
     </Router>
   );

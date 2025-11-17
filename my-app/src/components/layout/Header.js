@@ -42,9 +42,10 @@ function Header() {
         <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
           <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
           <Link to="/decoder" onClick={() => setMenuOpen(false)}>Decoder</Link>
-          <Link to="/endorsement-generator" onClick={() => setMenuOpen(false)}>Generate Endorsement</Link>
-          <Link to="/flight-brief" onClick={() => setMenuOpen(false)}>Flight Brief</Link>
-          <Link to="/nighttime" onClick={() => setMenuOpen(false)}>Night Flight</Link>
+          <Link to="/endorsement-generator" onClick={() => setMenuOpen(false)}>Endorsement</Link>
+          <Link to="/wb" onClick={() => setMenuOpen(false)}>W&B</Link>
+          <Link to="/flight-brief" onClick={() => setMenuOpen(false)}>Brief</Link>
+          <Link to="/nighttime" onClick={() => setMenuOpen(false)}>Night</Link>
         </nav>
       </div>
     </header>
