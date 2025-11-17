@@ -161,7 +161,7 @@ return (
       flex: "1 1 320px",   // 把所有剩余空间都给右侧
       minWidth: "280px",   // 不再强制最小宽度，由 flex 自己算
       maxWidth: "700px",
-      marginLeft: "200px",
+      
     }}
   >
           <div style={{ marginTop: "10px" }}>
