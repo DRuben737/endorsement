@@ -43,7 +43,7 @@ function About() {
         <h3>📫 Contact</h3>
         <p>
           For feedback, bug reports, or feature suggestions:<br />
-          📧 <a href="mailto:aviation.ruben@gmail.com">aviation.ruben@gmail.com</a>
+          📧 <a href="mailto:admin@pilotseal.com">admin@pilotseal.com</a>
         </p>
       </section>
 
