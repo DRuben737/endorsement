@@ -4,6 +4,16 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+/* ====== 主域立即跳转（防止任何渲染/闪现）====== */
+const host = window.location.hostname;
+
+if (host === 'pilotseal.com' || host === 'www.pilotseal.com') {
+  // 防止首屏闪现
+  document.documentElement.style.display = 'none';
+  window.location.replace('https://tool.pilotseal.com');
+}
+/* =========================================== */
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
@@ -11,7 +21,4 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
