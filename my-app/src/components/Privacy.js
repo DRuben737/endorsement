@@ -65,7 +65,7 @@ function Privacy() {
 
         <h3>7. Contact</h3>
         <p>If you have questions about privacy, reach us at:</p>
-        <p>Email: support@pilotseal.com</p>
+        <p>Email: admin@pilotseal.com</p>
 
         <p style={{ fontStyle: 'italic' }}>Last Updated: October 2025</p>
       </div>
