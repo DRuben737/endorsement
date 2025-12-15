@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- 必须放在 head 最前面 -->
+    <style>
+      html { visibility: hidden; }
+    </style>
+    <script>
+      (function () {
+        var h = location.hostname;
+        if (h === 'pilotseal.com' || h === 'www.pilotseal.com') {
+          location.replace('https://tool.pilotseal.com');
+        } else {
+          document.documentElement.style.visibility = '';
+        }
+      })();
+    </script>
+
     <meta charset="utf-8" />
 
     <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png" />
@@ -11,7 +26,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
 
-    <!-- Primary SEO -->
     <title>Pilot Seal Tools</title>
     <meta
       name="description"
@@ -28,8 +42,6 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://tool.pilotseal.com/" />
     <meta property="og:site_name" content="Pilot Seal" />
-    <!-- If you have a share image, put it in /public and update the path -->
-    <!-- <meta property="og:image" content="https://tool.pilotseal.com/og-image.png" /> -->
 
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Pilot Seal Tools" />
@@ -37,57 +49,18 @@
       name="twitter:description"
       content="Aviation calculators and training helpers from Pilot Seal."
     />
-    <!-- <meta name="twitter:image" content="https://tool.pilotseal.com/og-image.png" /> -->
 
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-
-    <!-- Google tag (gtag.js) -->
+    <!-- Google tag -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-5VFT1X8VN2"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-      gtag("config", "G-5VFT1X8VN2");
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5VFT1X8VN2');
     </script>
   </head>
 
   <body>
-    <noscript>
-      Pilot Seal Tools — Aviation calculators and training helpers (Night time & twilight, Weight &amp; Balance,
-      Endorsements, and more).
-    </noscript>
-
-    <!-- Static fallback content for crawlers / no-JS previews (React will replace this on load) -->
-    <div id="root">
-      <main style="padding:16px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5;">
-        <h1 style="margin:0 0 8px 0;font-size:22px;">Pilot Seal Tools</h1>
-        <p style="margin:0 0 12px 0;">
-          Aviation calculators and training helpers for pilots and instructors.
-        </p>
-        <ul style="margin:0 0 12px 18px;padding:0;">
-          <li>Night time &amp; twilight calculator</li>
-          <li>Weight and balance</li>
-          <li>Endorsement generator</li>
-        </ul>
-        <p style="margin:0;">
-          Visit: <a href="https://tool.pilotseal.com/">tool.pilotseal.com</a>
-        </p>
-      </main>
-    </div>
+    <div id="root"></div>
   </body>
 </html>
