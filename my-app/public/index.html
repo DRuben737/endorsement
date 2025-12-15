@@ -2,19 +2,20 @@
 <html lang="en">
   <head>
     <!-- 必须放在 head 最前面 -->
-    <style>
-      html { visibility: hidden; }
-    </style>
-    <script>
-      (function () {
-        var h = location.hostname;
-        if (h === 'pilotseal.com' || h === 'www.pilotseal.com') {
-          location.replace('https://tool.pilotseal.com');
-        } else {
-          document.documentElement.style.visibility = '';
-        }
-      })();
-    </script>
+<script>
+  (function () {
+    var h = location.hostname;
+    var isMain =
+      h === 'pilotseal.com' || h === 'www.pilotseal.com';
+
+    if (isMain) {
+      // 只对主域：立即跳转，不显示任何内容
+      document.documentElement.style.display = 'none';
+      location.replace('https://tool.pilotseal.com');
+    }
+    // 其它情况（localhost / tool 子域）：什么都不做
+  })();
+</script>
 
     <meta charset="utf-8" />
 
