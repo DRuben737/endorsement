@@ -34,7 +34,7 @@ function Header() {
       <div className="header-left">
         <img src="/images/logo.png" alt="Logo" className="logo" />
         <h1 className="site-title">
-          <Link to="/" className="title-link">Pilot Seal</Link>
+          <Link to="/" className="title-link">PilotSeal Tools</Link>
         </h1>
       </div>
       <button className="menu-toggle" onClick={toggleMenu}>☰</button>

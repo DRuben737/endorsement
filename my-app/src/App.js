@@ -1,4 +1,5 @@
 import React from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import './App.css';
 
@@ -20,6 +21,7 @@ Modal.setAppElement('#root');
 
 function App() {
   return (
+    <HelmetProvider>
     <Router>
       <Routes>
         <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
@@ -37,6 +39,7 @@ function App() {
 />
       </Routes>
     </Router>
+    </HelmetProvider>
   );
 }
 

@@ -3,7 +3,8 @@ import Modal from 'react-modal';
 import templates from '../templates';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import '../css/EndorsementGenerator.css';
-import styles from '../css/EndorsementGenerator.module.css'; // 导入 CSS 模块
+import styles from '../css/EndorsementGenerator.module.css'; // CSS module
+import { Helmet } from 'react-helmet-async';
 
 function EndorsementGenerator() {
   const [formData, setFormData] = useState({
@@ -14,98 +15,101 @@ function EndorsementGenerator() {
     studentCertNumber: '',
     date: '',
   });
+
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  const handleClearSelection = () => {
-    setSelectedTemplates([]); // 清空所选模板
-  };
-  
   const [pdfUrl, setPdfUrl] = useState('');
   const [selectedTemplates, setSelectedTemplates] = useState([]);
 
   const canvasRef = useRef(null);
 
-useEffect(() => {
-  const canvas = canvasRef.current;
-  if (!canvas) return;
+  const handleClearSelection = () => {
+    setSelectedTemplates([]);
+  };
 
-  const ctx = canvas.getContext('2d');
-  const ratio = window.devicePixelRatio || 1;
-  canvas.width = canvas.offsetWidth * ratio;
-  canvas.height = canvas.offsetHeight * ratio;
-  canvas.style.width = canvas.offsetWidth + 'px';
-  canvas.style.height = canvas.offsetHeight + 'px';
-  ctx.scale(ratio, ratio);
-  ctx.lineWidth = 3.5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#000';
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  let drawing = false;
+    const ctx = canvas.getContext('2d');
+    const ratio = window.devicePixelRatio || 1;
 
-  const getOffset = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    if (e.touches && e.touches.length > 0) {
-      return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top,
-      };
-    } else {
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    canvas.style.width = canvas.offsetWidth + 'px';
+    canvas.style.height = canvas.offsetHeight + 'px';
+
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#000';
+
+    let drawing = false;
+
+    const getOffset = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches && e.touches.length > 0) {
+        return {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top,
+        };
+      }
       return {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       };
-    }
-  };
+    };
 
-  const startDraw = (e) => {
-    e.preventDefault();
-    drawing = true;
-    const { x, y } = getOffset(e);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  };
+    const startDraw = (e) => {
+      e.preventDefault();
+      drawing = true;
+      const { x, y } = getOffset(e);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    };
 
-  const draw = (e) => {
-    if (!drawing) return;
-    e.preventDefault();
-    const { x, y } = getOffset(e);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  };
+    const draw = (e) => {
+      if (!drawing) return;
+      e.preventDefault();
+      const { x, y } = getOffset(e);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    };
 
-  const endDraw = (e) => {
-    e.preventDefault();
-    drawing = false;
-    ctx.closePath();
-  };
+    const endDraw = (e) => {
+      e.preventDefault();
+      drawing = false;
+      ctx.closePath();
+    };
 
-  // 鼠标事件
-  canvas.addEventListener('mousedown', startDraw);
-  canvas.addEventListener('mousemove', draw);
-  canvas.addEventListener('mouseup', endDraw);
-  canvas.addEventListener('mouseleave', endDraw);
+    // Mouse events
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
 
-  // 触控事件
-  canvas.addEventListener('touchstart', startDraw, { passive: false });
-  canvas.addEventListener('touchmove', draw, { passive: false });
-  canvas.addEventListener('touchend', endDraw, { passive: false });
-  canvas.addEventListener('touchcancel', endDraw, { passive: false });
+    // Touch events
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', endDraw, { passive: false });
+    canvas.addEventListener('touchcancel', endDraw, { passive: false });
 
-  return () => {
-    canvas.removeEventListener('mousedown', startDraw);
-    canvas.removeEventListener('mousemove', draw);
-    canvas.removeEventListener('mouseup', endDraw);
-    canvas.removeEventListener('mouseleave', endDraw);
+    return () => {
+      canvas.removeEventListener('mousedown', startDraw);
+      canvas.removeEventListener('mousemove', draw);
+      canvas.removeEventListener('mouseup', endDraw);
+      canvas.removeEventListener('mouseleave', endDraw);
 
-    canvas.removeEventListener('touchstart', startDraw);
-    canvas.removeEventListener('touchmove', draw);
-    canvas.removeEventListener('touchend', endDraw);
-    canvas.removeEventListener('touchcancel', endDraw);
-  };
-}, []);
+      canvas.removeEventListener('touchstart', startDraw);
+      canvas.removeEventListener('touchmove', draw);
+      canvas.removeEventListener('touchend', endDraw);
+      canvas.removeEventListener('touchcancel', endDraw);
+    };
+  }, []);
 
   const sanitizeText = (text) => {
-    return text.replace(/\t/g, ' ').replace(/[\u{0080}-\u{FFFF}]/gu, ''); // Replace tabs with spaces and remove non-standard characters
+    // Replace tabs with spaces and remove non-standard characters
+    return text.replace(/\t/g, ' ').replace(/[\u{0080}-\u{FFFF}]/gu, '');
   };
 
   const splitTextIntoLines = (text, font, fontSize, maxWidth) => {
@@ -128,11 +132,8 @@ useEffect(() => {
         }
       });
 
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-
-      lines.push(''); // Add an empty line to separate paragraphs
+      if (currentLine) lines.push(currentLine);
+      lines.push(''); // empty line between paragraphs
     });
 
     return lines;
@@ -143,7 +144,7 @@ useEffect(() => {
       alert('Please select at least one template before generating the PDF.');
       return;
     }
-  
+
     const {
       instructorName,
       instructorCertNumber,
@@ -152,40 +153,39 @@ useEffect(() => {
       studentCertNumber,
       date,
     } = formData;
-  
-    const userConfirmed = window.confirm(`
-      Please verify the information before generating the PDF:
-      Instructor Name: ${instructorName}
-      Instructor Cert Number: ${instructorCertNumber}
-      Instructor Cert Exp Date: ${instructorCertExpDate}
-      Student Name: ${studentName}
-      Student Cert Number: ${studentCertNumber}
-      Date: ${date}
-    `);
-  
-    if (!userConfirmed) {
-      return;
-    }
-  
+
+    const userConfirmed = window.confirm(
+      `Please verify the information before generating the PDF:\n` +
+        `Instructor Name: ${instructorName}\n` +
+        `Instructor Cert Number: ${instructorCertNumber}\n` +
+        `Instructor Cert Exp Date: ${instructorCertExpDate}\n` +
+        `Student Name: ${studentName}\n` +
+        `Student Cert Number: ${studentCertNumber}\n` +
+        `Date: ${date}`
+    );
+
+    if (!userConfirmed) return;
+
     try {
       const doc = await PDFDocument.create();
       let page = doc.addPage([612, 792]); // 8.5 x 11 inches
       const { height } = page.getSize();
+
       const font = await doc.embedFont(StandardFonts.Helvetica);
       const fontSize = 7;
       const margin = 30;
       const maxWidth = 270;
       const boxWidth = 280;
-      const boxPadding = 5; // Padding between text and box
+      const boxPadding = 5;
 
       // Embed signature image from canvas
       const canvas = canvasRef.current;
       const dataUrl = canvas.toDataURL('image/png');
-      const signatureImageBytes = await fetch(dataUrl).then(res => res.arrayBuffer());
+      const signatureImageBytes = await fetch(dataUrl).then((res) => res.arrayBuffer());
       const signatureImage = await doc.embedPng(signatureImageBytes);
       const signatureDims = signatureImage.scale(0.5);
 
-      // 2-column layout, dynamic row count per page
+      // 2-column layout
       let x = margin;
       let y = height - margin;
       const columns = 2;
@@ -195,6 +195,7 @@ useEffect(() => {
 
       for (const templateKey of selectedTemplates) {
         let content = templates[templateKey];
+
         content = content
           .replace(/{studentName}/g, studentName)
           .replace(/{studentCertNumber}/g, studentCertNumber)
@@ -202,7 +203,9 @@ useEffect(() => {
           .replace(/{instructorName}/g, instructorName)
           .replace(/{instructorCertNumber}/g, instructorCertNumber)
           .replace(/{instructorCertExpDate}/g, instructorCertExpDate);
+
         content = sanitizeText(content);
+
         const lines = splitTextIntoLines(content, font, fontSize, maxWidth);
         const lineHeight = 1.15 * fontSize;
         const textHeight = lines.length * lineHeight;
@@ -213,11 +216,10 @@ useEffect(() => {
         const totalBoxWidth = columns * boxWidth + (columns - 1) * boxSpacingX;
         const horizontalOffset = (pageWidth - totalBoxWidth) / 2;
 
-        // Check if adding this box would exceed the page bottom
         const willExceedPage = y - (boxHeight + boxSpacingY) < margin;
-        if (willExceedPage || (col >= columns)) {
+        if (willExceedPage || col >= columns) {
           page = doc.addPage([612, 792]);
-          y = height - margin;
+          y = height - margin; // (keep your original logic)
           col = 0;
         }
 
@@ -235,32 +237,28 @@ useEffect(() => {
         let textY = y;
         for (let i = 0; i < lines.length; i++) {
           page.drawText(lines[i], {
-            x: x,
+            x,
             y: textY - lineHeight,
             size: fontSize,
-            font: font,
+            font,
           });
           textY -= lineHeight;
         }
 
-        // 找到最后一行的位置
         const finalLineY = textY - lineHeight;
 
-        // 在末尾写入 “Signature:” 字样
-        page.drawText("Signature:", {
-          x: x,
+        page.drawText('Signature:', {
+          x,
           y: finalLineY,
           size: fontSize,
-          font: font,
+          font,
         });
 
-        // 缩小签名图像尺寸
         const scaledWidth = 50;
         const scaledHeight = (signatureDims.height / signatureDims.width) * scaledWidth;
 
-        // 插入签名图像在 “Signature:” 后面
         page.drawImage(signatureImage, {
-          x: x + 55,  // “Signature:” 之后约5mm处
+          x: x + 55,
           y: finalLineY - 2,
           width: scaledWidth,
           height: scaledHeight,
@@ -269,16 +267,15 @@ useEffect(() => {
         col++;
         if (col >= columns) {
           col = 0;
-          y -= (boxHeight + boxSpacingY);
+          y -= boxHeight + boxSpacingY;
         }
       }
-  
+
       const pdfBytes = await doc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
       console.log('PDF generated successfully:', url);
-  
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
@@ -291,9 +288,7 @@ useEffect(() => {
       return;
     }
     const previewWindow = window.open(pdfUrl, '_blank');
-    if (!previewWindow) {
-      alert('Failed to open preview window.');
-    }
+    if (!previewWindow) alert('Failed to open preview window.');
   };
 
   const handlePrint = () => {
@@ -304,33 +299,28 @@ useEffect(() => {
     const printWindow = window.open(pdfUrl, '_blank');
     if (!printWindow) {
       alert('Failed to open print window.');
-    } else {
-      printWindow.onload = () => {
-        printWindow.print();
-      };
+      return;
     }
+    printWindow.onload = () => {
+      printWindow.print();
+    };
   };
 
-  const openModal = () => {
-    setModalIsOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalIsOpen(false);
-  };
+  const openModal = () => setModalIsOpen(true);
+  const closeModal = () => setModalIsOpen(false);
 
   const handleTemplateSelection = (templateKey) => {
     setSelectedTemplates((prevSelected) =>
       prevSelected.includes(templateKey)
-        ? prevSelected.filter((key) => key !== templateKey) // Deselect if already selected
-        : [...prevSelected, templateKey] // Select if not already selected
+        ? prevSelected.filter((key) => key !== templateKey)
+        : [...prevSelected, templateKey]
     );
   };
 
   const handleDeselectTemplate = (templateKey) => {
-    setSelectedTemplates((prev) => prev.filter(template => template !== templateKey));
+    setSelectedTemplates((prev) => prev.filter((t) => t !== templateKey));
   };
-  
+
   const handleConfirmSelection = () => {
     if (selectedTemplates.length === 0) {
       alert('Please select at least one template before confirming.');
@@ -345,47 +335,66 @@ useEffect(() => {
 
   return (
     <>
+      <Helmet>
+        <title>FAA Endorsement Generator | PilotSeal Tools</title>
+        <meta
+          name="description"
+          content="Generate structured FAA-style logbook endorsement wording drafts for CFIs and student pilots. Always verify against official FAA references."
+        />
+        <link rel="canonical" href="https://tool.pilotseal.com/endorsement-generator" />
+      </Helmet>
+
+  {/* SEO-only (visually hidden) */}
+  <h1 style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
+    FAA Endorsement Generator
+  </h1>
+  <p style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
+    Generate structured endorsement wording drafts aligned with FAR 61 concepts. Always verify against official FAA references.
+  </p>
+
       <div className={styles.inputSection}>
-      <input
-        type="text"
-        placeholder="Instructor Name"
-        value={formData.instructorName}
-        onChange={handleChange('instructorName')}
-      />
-      <input
-        type="text"
-        placeholder="Instructor Cert Number"
-        value={formData.instructorCertNumber}
-        onChange={handleChange('instructorCertNumber')}
-      />
-      <input
-        type="text"
-        placeholder="Instructor Cert Exp Date (MM/DD/YYYY)"
-        value={formData.instructorCertExpDate}
-        onChange={handleChange('instructorCertExpDate')}
-      />
-      <input
-        type="text"
-        placeholder="Student Name"
-        value={formData.studentName}
-        onChange={handleChange('studentName')}
-      />
-      <input
-        type="text"
-        placeholder="Student Cert Number (optional)"
-        value={formData.studentCertNumber}
-        onChange={handleChange('studentCertNumber')}
-      />
-      <input
-        type="text"
-        placeholder="Date (MM/DD/YYYY)"
-        value={formData.date}
-        onChange={handleChange('date')}
-      />
+        <input
+          type="text"
+          placeholder="Instructor Name"
+          value={formData.instructorName}
+          onChange={handleChange('instructorName')}
+        />
+        <input
+          type="text"
+          placeholder="Instructor Cert Number"
+          value={formData.instructorCertNumber}
+          onChange={handleChange('instructorCertNumber')}
+        />
+        <input
+          type="text"
+          placeholder="Instructor Cert Exp Date (MM/DD/YYYY)"
+          value={formData.instructorCertExpDate}
+          onChange={handleChange('instructorCertExpDate')}
+        />
+        <input
+          type="text"
+          placeholder="Student Name"
+          value={formData.studentName}
+          onChange={handleChange('studentName')}
+        />
+        <input
+          type="text"
+          placeholder="Student Cert Number (optional)"
+          value={formData.studentCertNumber}
+          onChange={handleChange('studentCertNumber')}
+        />
+        <input
+          type="text"
+          placeholder="Date (MM/DD/YYYY)"
+          value={formData.date}
+          onChange={handleChange('date')}
+        />
       </div>
 
       <div className={styles.signatureContainer}>
-        <p className={styles.signatureLabel}>Draw your signature (or leave blank and sign on paper):</p>
+        <p className={styles.signatureLabel}>
+          Draw your signature (or leave blank and sign on paper):
+        </p>
         <div className={styles.signatureWrapper}>
           <canvas
             ref={canvasRef}
@@ -394,63 +403,78 @@ useEffect(() => {
             height={300}
           />
         </div>
-        <button className={styles.clearButton} onClick={() => {
-          const ctx = canvasRef.current.getContext('2d');
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        }}>
+        <button
+          className={styles.clearButton}
+          onClick={() => {
+            const ctx = canvasRef.current.getContext('2d');
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          }}
+        >
           Clear
         </button>
       </div>
 
       <div className={styles.buttonSection}>
-      <button onClick={openModal}>Select Endorsement</button>
-      <button onClick={handleGeneratePDF}>Generate PDF</button>
-      <button onClick={handlePreview}>Preview</button>
-      <button onClick={handlePrint}>Print</button>
+        <button onClick={openModal}>Select Endorsement</button>
+        <button onClick={handleGeneratePDF}>Generate PDF</button>
+        <button onClick={handlePreview}>Preview</button>
+        <button onClick={handlePrint}>Print</button>
       </div>
+
       <Modal
-  isOpen={modalIsOpen}
-  onRequestClose={closeModal}
-  contentLabel="Select Template"
-  className="Modal"
-  overlayClassName="Overlay"
->
-  <div className="ModalHeader">
-    <div className="HeaderContent">
-      <h2>Select Templates</h2>
-    </div>
-    <div className="HeaderButtons">
-      <button onClick={handleClearSelection} className="ClearSelectionButton">Clear</button>
-      <button onClick={handleConfirmSelection} className="ConfirmButton">Confirm</button>
-      <button onClick={closeModal} className="CloseButton">X</button>
-    </div>
-  </div>
-
-  <div className="SelectedTemplates">
-    {selectedTemplates.length > 0 && (
-      <ul>
-        {selectedTemplates.map((template) => (
-          <li key={template} className="SelectedTemplate">
-            {template}
-            <button onClick={() => handleDeselectTemplate(template)} className="DeselectButton">x</button>
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
-
-  <ul className="TemplateList">
-    {Object.keys(templates).map((templateKey) => (
-      <li
-        key={templateKey}
-        className={selectedTemplates.includes(templateKey) ? 'SelectedTemplate' : ''}
-        onClick={() => handleTemplateSelection(templateKey)}
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel="Select Template"
+        className="Modal"
+        overlayClassName="Overlay"
       >
-        {templateKey}
-      </li>
-    ))}
-  </ul>
-</Modal>
+        <div className="ModalHeader">
+          <div className="HeaderContent">
+            <h2>Select Templates</h2>
+          </div>
+          <div className="HeaderButtons">
+            <button onClick={handleClearSelection} className="ClearSelectionButton">
+              Clear
+            </button>
+            <button onClick={handleConfirmSelection} className="ConfirmButton">
+              Confirm
+            </button>
+            <button onClick={closeModal} className="CloseButton">
+              X
+            </button>
+          </div>
+        </div>
+
+        <div className="SelectedTemplates">
+          {selectedTemplates.length > 0 && (
+            <ul>
+              {selectedTemplates.map((template) => (
+                <li key={template} className="SelectedTemplate">
+                  {template}
+                  <button
+                    onClick={() => handleDeselectTemplate(template)}
+                    className="DeselectButton"
+                  >
+                    x
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <ul className="TemplateList">
+          {Object.keys(templates).map((templateKey) => (
+            <li
+              key={templateKey}
+              className={selectedTemplates.includes(templateKey) ? 'SelectedTemplate' : ''}
+              onClick={() => handleTemplateSelection(templateKey)}
+            >
+              {templateKey}
+            </li>
+          ))}
+        </ul>
+      </Modal>
     </>
   );
 }
