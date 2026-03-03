@@ -1,371 +1,619 @@
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import "../css/FlightBrief.css";
 
-import React, { useEffect } from 'react';
-import '../css/FlightBrief.css';
+/** ------------------ constants ------------------ */
+const API_BASE = "https://brief.r1978244759.workers.dev";
 
-function FlightBrief() {
-  useEffect(() => {
-    let latestAltimeter = null;
-    let latestTemperatureC = null;
+/** ------------------ utils (pure functions) ------------------ */
+function normalizeICAO(s) {
+  return (s || "").trim().toUpperCase();
+}
 
-    const btnCross = document.getElementById('btnCross');
-    const btnLocal = document.getElementById('btnLocal');
-    const crossCountryFields = document.getElementById('crossCountryFields');
-    const departure = document.getElementById('departure');
-    const arrival = document.getElementById('arrival');
-    const addStopBtn = document.getElementById('addStop');
+function uniq(arr) {
+  return Array.from(new Set(arr.filter(Boolean)));
+}
 
-    if (btnCross && btnLocal && crossCountryFields && departure && arrival && addStopBtn) {
-      btnCross.addEventListener('click', () => {
-        crossCountryFields.classList.remove('hidden');
-        crossCountryFields.removeAttribute('hidden');
-        btnCross.classList.add('active');
-        btnLocal.classList.remove('active');
-        arrival.value = '';
-      });
+// ETE (hours in decimal, string with 2 decimals)
+function calcETE(etd, eta) {
+  if (!etd || !eta) return "";
+  const [etdH, etdM] = etd.split(":").map(Number);
+  const [etaH, etaM] = eta.split(":").map(Number);
+  if ([etdH, etdM, etaH, etaM].some((n) => Number.isNaN(n))) return "";
 
-      btnLocal.addEventListener('click', () => {
-        crossCountryFields.classList.add('hidden');
-        crossCountryFields.setAttribute('hidden', '');
-        btnLocal.classList.add('active');
-        btnCross.classList.remove('active');
-        arrival.value = departure.value;
-      });
+  let etdMinutes = etdH * 60 + etdM;
+  let etaMinutes = etaH * 60 + etaM;
+  if (etaMinutes < etdMinutes) etaMinutes += 24 * 60;
 
-      departure.addEventListener('input', () => {
-        if (crossCountryFields.classList.contains('hidden')) {
-          arrival.value = departure.value;
-        }
-      });
+  const eteMinutes = etaMinutes - etdMinutes;
+  return (eteMinutes / 60).toFixed(2);
+}
 
-      addStopBtn.addEventListener('click', () => {
-        const stopDiv = document.createElement('div');
-        stopDiv.classList.add('flex', 'items-center', 'gap-2');
-        stopDiv.innerHTML = `
-          <input type="text" name="stop[]" class="stop-input w-full p-2 border border-gray-300 rounded" />
-          <button type="button" class="remove-stop text-red-500 font-bold">✕</button>
-        `;
-        crossCountryFields.insertBefore(stopDiv, addStopBtn);
-      });
+function calcPressureAltitude(elevationFt, altimeterInHg) {
+  // PA = (29.92 - altimeter) * 1000 + field elevation
+  return (29.92 - altimeterInHg) * 1000 + elevationFt;
+}
 
-      // Event delegation for removing stops
-      crossCountryFields.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-stop')) {
-          e.target.parentElement.remove();
-        }
-      });
+// Estimated DA (ft)
+function calcDensityAltitudeFt({ elevationFt, temperatureC, altimeterInHg }) {
+  const pressureAltitude = calcPressureAltitude(elevationFt, altimeterInHg);
+  const isaTemp = 15 - 2 * (elevationFt / 1000);
+  return Math.round(pressureAltitude + 120 * (temperatureC - isaTemp));
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+// 获取飞行类别的样式和描述（按你给的方案）
+function getFlightCategoryMeta(rule) {
+  const meta = {
+    VFR: { color: "#2ecc71", bg: "#eafaf1", label: "VFR", desc: "Visual Flight Rules" },
+    MVFR: { color: "#3498db", bg: "#ebf5fb", label: "MVFR", desc: "Marginal VFR" },
+    IFR: { color: "#e74c3c", bg: "#fdedec", label: "IFR", desc: "Instrument Flight Rules" },
+    LIFR: { color: "#9b59b6", bg: "#f5eef8", label: "LIFR", desc: "Low IFR" },
+  };
+  return meta[rule] || { color: "#7f8c8d", bg: "#f4f6f7", label: rule || "UNK", desc: "Unknown" };
+}
+
+// NOTAM 智能过滤与分类（按你给的方案，稍微改成返回 notam 对象，方便显示 start/end）
+function categorizeNotams(notams) {
+  if (!Array.isArray(notams)) return { closures: [], nav: [], general: [] };
+
+  const closuresKeys = /RWY|TWY|CLOSED|APRON|TAXIWAY|RUNWAY/i;
+  const navKeys = /NAV|COM|VHF|UHF|GPS|ILS|VOR|FREQ|RADIO/i;
+
+  const result = { closures: [], nav: [], general: [] };
+
+  notams.forEach((n) => {
+    const text = n?.raw || n?.text || "";
+    if (closuresKeys.test(text)) {
+      result.closures.push(n);
+    } else if (navKeys.test(text)) {
+      result.nav.push(n);
+    } else {
+      result.general.push(n);
     }
+  });
+  return result;
+}
 
-    // --------- Weather Info Section ---------
-    async function fetchData(url) {
-      const response = await fetch(url);
-      return await response.json();
-    }
+function riskCategory(total) {
+  if (total <= 10) {
+    return {
+      level: "🟢 LOW RISK",
+      color: "green",
+      advice: "Risk acceptable after discussion. Flight may proceed.",
+    };
+  }
+  if (total <= 15) {
+    return {
+      level: "🟡 MODERATE RISK",
+      color: "orange",
+      advice:
+        "Consult with senior or chief instructor to discuss risk mitigation. May proceed after reduction.",
+    };
+  }
+  return {
+    level: "🔴 HIGH RISK",
+    color: "red",
+    advice:
+      "Flight requires Chief Pilot approval. Discuss flight plan in detail.",
+  };
+}
 
-    async function displayWeather() {
-      const airports = [];
-      const dep = document.getElementById('departure')?.value.trim().toUpperCase();
-      if (dep) airports.push(dep);
-      const stops = Array.from(document.querySelectorAll('.stop-input'))
-        .map(i => i.value.trim().toUpperCase())
-        .filter(Boolean);
-      airports.push(...stops);
-      const arr = document.getElementById('arrival')?.value.trim().toUpperCase();
-      if (arr && arr !== dep) airports.push(arr);
-      const uniqueAirports = [...new Set(airports)];
-      const metarSection = document.getElementById('metar-section');
-      const tafSection = document.getElementById('taf-section');
-      const airsigmetSection = document.getElementById('airsigmet-section');
-      if (!metarSection || !tafSection || !airsigmetSection) return;
-      metarSection.innerHTML = '';
-      tafSection.innerHTML = '';
-      airsigmetSection.innerHTML = '';
-      for (const icao of uniqueAirports) {
-        const metarUrl = `https://brief.r1978244759.workers.dev/?url=https://avwx.rest/api/metar/${icao}?format=json`;
-        const tafUrl = `https://brief.r1978244759.workers.dev/?url=https://avwx.rest/api/taf/${icao}?format=json`;
-        const metarData = await fetchData(metarUrl);
-        const tafData = await fetchData(tafUrl);
+/** ------------------ Risk definitions ------------------ */
+const STATIC_RISKS = [
+  { id: "static-dual-flight", label: "Dual flight", value: 1 },
+  { id: "static-training-pre-solo", label: "Training Pre-solo student", value: 3 },
+  { id: "static-solo-student", label: "SOLO student", value: 3 },
+  { id: "static-dpe-check", label: "DPE or Check flight", value: 2 },
+  { id: "static-first-fly-fi", label: "First fly with FI", value: 1 },
+  { id: "static-different-model", label: "Different model", value: 1 },
+  { id: "static-last-flight-30", label: "Last flight >30 days", value: 1 },
+  { id: "static-acft-time-40", label: "Aircraft time < 40 hours (Rated)", value: 1 },
+  { id: "static-fi-dual-200", label: "FI < 200 hours Dual given", value: 1 },
+];
 
-        if (!latestAltimeter && metarData?.altimeter?.value) {
-          latestAltimeter = metarData.altimeter.value;
-        }
-        if (!latestTemperatureC && metarData?.temperature?.value) {
-          latestTemperatureC = metarData.temperature.value;
-          const tempInput = document.getElementById('outsideTemp');
-          if (tempInput) tempInput.value = latestTemperatureC;
-        }
+const DYNAMIC_RISKS = [
+  { id: "dynamic-night-ops", label: "Night ops", value: 1 },
+  { id: "dynamic-last-night-30", label: "Last night >30 days", value: 1 },
+  { id: "dynamic-svfr", label: "SVFR", value: 1 },
+  { id: "dynamic-gust-spread", label: "Gust spread > 13 kt", value: 1 },
+  { id: "dynamic-other-fi-cancel", label: "Other FI cancellation due to WX", value: 1 },
+  { id: "dynamic-max-fuel-flight", label: "Max fuel flight", value: 1 },
+  { id: "full-down-auto", label: "Full down auto", value: 1 },
+  { id: "dynamic-stall-training", label: "STALL Training", value: 1 },
+  { id: "dynamic-spin-training", label: "SPIN Training", value: 2 },
+];
 
-        // Only append METAR/TAF block if not already present for this airport
-        if (!document.getElementById(`metar-${icao}`)) {
-          const metarDiv = document.createElement('div');
-          metarDiv.id = `metar-${icao}`;
-          metarDiv.className = 'bg-gray-100 p-3 rounded border mb-10';
-          metarDiv.textContent = ` ${icao}: ${metarData?.raw || 'Unavailable'}`;
-          metarSection.appendChild(metarDiv);
-          const separator = document.createElement('hr');
-          separator.style.border = '1px solid white';
-          separator.style.margin = '1rem 0';
-          metarSection.appendChild(separator);
-        }
+function sumChecked(riskConfig, checkedMap) {
+  return riskConfig.reduce((acc, r) => acc + (checkedMap[r.id] ? r.value : 0), 0);
+}
 
-        if (!document.getElementById(`taf-${icao}`)) {
-          const tafDiv = document.createElement('div');
-          tafDiv.id = `taf-${icao}`;
-          tafDiv.className = 'bg-gray-100 p-3 rounded border mb-12';
-          tafDiv.textContent = ` ${icao}: ${tafData?.raw || 'Unavailable'}`;
-          tafSection.appendChild(tafDiv);
-          const separator = document.createElement('hr');
-          separator.style.border = '1px solid white';
-          separator.style.margin = '1rem 0';
-          tafSection.appendChild(separator);
-        }
-      }
-      // AIRMET/SIGMET（仅显示一次）
-      const sigmetUrl = `https://brief.r1978244759.workers.dev/?url=https://avwx.rest/api/airsigmet?format=json`;
-      const airsigmetData = await fetchData(sigmetUrl);
-      const airsigDiv = document.createElement('div');
-      airsigDiv.className = 'bg-gray-100 p-3 rounded border';
-      airsigDiv.textContent = Array.isArray(airsigmetData) && airsigmetData.length
-        ? `${airsigmetData.length} active AIRMET/SIGMETs in U.S. FIRs`
-        : 'No active AIRMET/SIGMETs';
-      airsigmetSection.appendChild(airsigDiv);
-    }
+function checkedItemsLines(riskConfig, checkedMap) {
+  return riskConfig
+    .filter((r) => checkedMap[r.id])
+    .map((r) => `- ${r.label} [${r.value}]`);
+}
 
-    const fetchWeatherBtn = document.getElementById('fetchWeatherBtn');
-    if (fetchWeatherBtn) {
-      fetchWeatherBtn.addEventListener('click', async () => {
-        await displayWeather();
-      });
-    }
+/** ------------------ Fetch helpers ------------------ */
+async function fetchJson(url, signal) {
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
 
-    const calculateDAButton = document.getElementById('calculateDA');
-    if (calculateDAButton) {
-      calculateDAButton.addEventListener('click', () => {
-        const elevation = parseFloat(document.getElementById('fieldElevation').value);
-        const temperature = parseFloat(document.getElementById('outsideTemp').value);
-        const resultDiv = document.getElementById('daResult');
-        if (isNaN(elevation)) {
-          resultDiv.textContent = 'Please enter field elevation.';
-          return;
-        }
-        if (!latestAltimeter || isNaN(temperature)) {
-          resultDiv.textContent = 'Weather data is missing or invalid. Please click "Fetch Weather" first.';
-          return;
-        }
-        const pressureAltitude = (29.92 - latestAltimeter) * 1000 + elevation;
-        const isaTemp = 15 - (2 * (elevation / 1000));
-        const da = Math.round(pressureAltitude + (120 * (temperature - isaTemp)));
-        resultDiv.textContent = `Estimated Density Altitude: ${da.toLocaleString()} ft (using Altimeter ${latestAltimeter} inHg)`;
-      });
-    }
+function avwxMetarUrl(icao) {
+  return `${API_BASE}/?url=${encodeURIComponent(`https://avwx.rest/api/metar/${icao}?format=json`)}`;
+}
 
-    //计算剩余时间
-    function getMxRemaining() {
-      const mxNow = parseFloat(document.getElementById("mx-now")?.value || 0);
-      const mxDue = parseFloat(document.getElementById("mx-due")?.value || 0);
-      return (mxDue - mxNow).toFixed(1);
-    }
+function avwxTafUrl(icao) {
+  return `${API_BASE}/?url=${encodeURIComponent(`https://avwx.rest/api/taf/${icao}?format=json`)}`;
+}
 
-    // --- Risk Assessment Calculation (new version) ---
-    function updateRiskScore() {
-      let staticScore = 0;
-      let dynamicScore = 0;
-      // 处理 static-risk，只处理勾选的 checkbox
-      document.querySelectorAll('.static-risk:checked').forEach(cb => {
-        staticScore += parseInt(cb.value);
-      });
-      // 处理 dynamic-risk：checkbox + number
-      document.querySelectorAll('.dynamic-risk').forEach(input => {
-        if (input.type === 'checkbox' && input.checked) {
-          dynamicScore += parseInt(input.value);
-        } else if (input.type === 'number') {
-          dynamicScore += parseInt(input.value) || 0;
-        }
-      });
-      // 特别处理 IMSAFE 数字输入（归类在 static-risk）
-      let imsafeValue = parseInt(document.getElementById('imsafe-risk').value) || 0;
-      staticScore += imsafeValue;
-      let total = staticScore + dynamicScore;
-      const riskScoreValue = document.getElementById('riskScoreValue');
-      const riskScoreLevel = document.getElementById('riskScoreLevel');
-      const riskRecommendation = document.getElementById('riskRecommendation');
-      if (riskScoreValue && riskScoreLevel && riskRecommendation) {
-        riskScoreValue.textContent = total;
-        if (total <= 10) {
-          riskScoreLevel.textContent = '🟢 LOW RISK';
-          riskScoreLevel.style.color = 'green';
-          riskRecommendation.textContent = 'Risk acceptable after discussion. Flight may proceed.';
-        } else if (total > 10 && total <= 15) {
-          riskScoreLevel.textContent = '🟡 MODERATE RISK';
-          riskScoreLevel.style.color = 'orange';
-          riskRecommendation.textContent = 'Consult with senior or chief instructor to discuss risk mitigation. May proceed after reduction.';
-        } else {
-          riskScoreLevel.textContent = '🔴 HIGH RISK';
-          riskScoreLevel.style.color = 'red';
-          riskRecommendation.textContent = 'Flight requires Chief Pilot approval. Discuss flight plan in detail.';
-        }
-      }
-    }
-    document.querySelectorAll('.static-risk, .dynamic-risk').forEach(cb => {
-      cb.addEventListener('change', updateRiskScore);
+function avwxAirsigmetUrl() {
+  return `${API_BASE}/?url=${encodeURIComponent(`https://avwx.rest/api/airsigmet?format=json`)}`;
+}
+
+function nmsNotamsUrl(airports) {
+  const qs = encodeURIComponent(airports.join(","));
+  return `${API_BASE}/notams?airports=${qs}`;
+}
+
+/** ------------------ Component ------------------ */
+export default function FlightBrief() {
+  /** ---- core form ---- */
+  const [studentName, setStudentName] = useState("");
+  const [instructorName, setInstructorName] = useState("");
+  const [flightRules, setFlightRules] = useState("VFR");
+  const [flightDate, setFlightDate] = useState("");
+  const [etd, setEtd] = useState("");
+  const [eta, setEta] = useState("");
+  const ete = useMemo(() => calcETE(etd, eta), [etd, eta]);
+
+
+  const [aircraftId, setAircraftId] = useState("");
+  const [fuel, setFuel] = useState("");
+  const [fuelTime, setFuelTime] = useState("");
+
+  /** ---- route ---- */
+  const [routeMode, setRouteMode] = useState("local"); // 'local' | 'cross'
+  const [departure, setDeparture] = useState("");
+  const [arrival, setArrival] = useState("");
+  const [stops, setStops] = useState([""]); // at least one input
+
+  /** ---- lesson ---- */
+  const [lessonPractice, setLessonPractice] = useState("");
+
+  /** ---- weather / DA ---- */
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
+
+  // store richer metar for category visualization
+  const [metarByIcaoData, setMetarByIcaoData] = useState({}); // { ICAO: { raw, flight_rules } }
+  const [tafByIcao, setTafByIcao] = useState({}); // { ICAO: "ICAO: raw" }
+  const [airsigmetSummary, setAirsigmetSummary] = useState("");
+
+  const latestAltimeterRef = useRef(null); // inHg number
+  const latestTemperatureCRef = useRef(null); // C number
+
+  const [fieldElevation, setFieldElevation] = useState("");
+  const [outsideTemp, setOutsideTemp] = useState(""); // read-only but stored
+  const [daResult, setDaResult] = useState("");
+
+  /** ---- notes ---- */
+  const [weatherNotes, setWeatherNotes] = useState("");
+
+  /** ---- NOTAMs (NMS) ---- */
+  const [notamLoading, setNotamLoading] = useState(false);
+  const [notamError, setNotamError] = useState("");
+  const [notamByIcao, setNotamByIcao] = useState({}); // { ICAO: {closures, nav, general} }
+  // airport-level collapse: { KPAO: true/false }  true=expanded
+  const [notamAirportOpen, setNotamAirportOpen] = useState({});
+
+  // category-level collapse per airport: { KPAO: { closures:true, nav:false, general:false } }
+  const [notamCategoryOpen, setNotamCategoryOpen] = useState({});
+
+  const toggleAirport = useCallback((icao) => {
+    setNotamAirportOpen((prev) => ({ ...prev, [icao]: !prev[icao] }));
+
+    // First time opening an airport: default expand closures, collapse nav/general
+    setNotamCategoryOpen((prev) => {
+      if (prev[icao]) return prev; // keep user's previous open/close choices
+      return { ...prev, [icao]: { closures: true, nav: false, general: false } };
     });
-    const imsafeRisk = document.getElementById('imsafe-risk');
-    if (imsafeRisk) {
-      imsafeRisk.addEventListener('input', updateRiskScore);
-    }
+  }, []);
 
-    // --- Within Limits Confirmation ---
-    function checkWithinLimits() {
-      const val = document.getElementById('withinLimitsText').value.trim().toLowerCase();
-      const status = document.getElementById('withinLimitsStatus');
-      if (status) {
-        if (val === "within limits") {
-          status.textContent = "✅ Confirmed";
-          status.className = "text-green-600 text-sm ml-2";
-        } else {
-          status.textContent = "❌ Not Confirmed";
-          status.className = "text-red-600 text-sm ml-2";
-        }
+  const toggleCategory = useCallback((icao, key) => {
+    setNotamCategoryOpen((prev) => ({
+      ...prev,
+      [icao]: {
+        ...(prev[icao] || { closures: true, nav: false, general: false }),
+        [key]: !(prev[icao]?.[key]),
+      },
+    }));
+  }, []);
+
+  /** ---- aircraft conditions ---- */
+  const [grossWeight, setGrossWeight] = useState("");
+  const [withinLimitsConfirmed, setWithinLimitsConfirmed] = useState(false);
+
+  const [mxNow, setMxNow] = useState("");
+  const [mxDue, setMxDue] = useState("");
+
+  const mxRemaining = useMemo(() => {
+    const now = parseFloat(mxNow || 0);
+    const due = parseFloat(mxDue || 0);
+    if (Number.isNaN(now) || Number.isNaN(due)) return "0.0";
+    return (due - now).toFixed(1);
+  }, [mxNow, mxDue]);
+
+  /** ---- risk ---- */
+  const [staticChecked, setStaticChecked] = useState(() => {
+    const init = {};
+    STATIC_RISKS.forEach((r) => (init[r.id] = false));
+    return init;
+  });
+  const [dynamicChecked, setDynamicChecked] = useState(() => {
+    const init = {};
+    DYNAMIC_RISKS.forEach((r) => (init[r.id] = false));
+    return init;
+  });
+  const [imsafe, setImsafe] = useState(0); // 0..6
+  const [otherRisks, setOtherRisks] = useState(0); // 0..5
+  const [riskComments, setRiskComments] = useState("");
+
+  const staticScore = useMemo(
+    () => sumChecked(STATIC_RISKS, staticChecked) + (parseInt(imsafe, 10) || 0),
+    [staticChecked, imsafe]
+  );
+  const dynamicScore = useMemo(
+    () => sumChecked(DYNAMIC_RISKS, dynamicChecked) + (parseInt(otherRisks, 10) || 0),
+    [dynamicChecked, otherRisks]
+  );
+  const totalRisk = staticScore + dynamicScore;
+  const riskMeta = useMemo(() => riskCategory(totalRisk), [totalRisk]);
+
+  const riskGates = useMemo(() => {
+  const gates = [];
+
+  const isSolo = staticChecked["static-solo-student"];
+  const isPreSolo = staticChecked["static-training-pre-solo"];
+  const isSVFR = dynamicChecked["dynamic-svfr"];
+  const isNight = dynamicChecked["dynamic-night-ops"];
+  const nightCurrency = dynamicChecked["dynamic-last-night-30"];
+
+  const isStall = dynamicChecked["dynamic-stall-training"]; // STALL Training
+  const isSpin = dynamicChecked["dynamic-spin-training"]; // SPIN Training
+  const isAutorotation = dynamicChecked["full-down-auto"]; // Full down auto (autorotation)
+
+  // 1️⃣ SVFR + Solo
+  if (isSVFR && isSolo) {
+    gates.push("SVFR with SOLO student – Chief Pilot review required.");
+  }
+
+  // 2️⃣ Night + no recent night
+  if (isNight && nightCurrency) {
+    gates.push("Night operation with no recent night currency – mitigation required.");
+  }
+
+  // 3️⃣ IFR + Pre-solo
+  if (flightRules === "IFR" && isPreSolo) {
+    gates.push("IFR selected with Pre-solo student – confirm training intent.");
+  }
+
+  // 4️⃣ METAR IFR/LIFR
+  const anyIFR = Object.values(metarByIcaoData || {}).some(
+    (m) => m?.flight_rules === "IFR" || m?.flight_rules === "LIFR"
+  );
+  if (anyIFR) {
+    gates.push("Destination/route reporting IFR/LIFR – evaluate alternate and minima.");
+  }
+
+  // 5️⃣ Airport closures
+  const closureAirport = Object.entries(notamByIcao || {}).find(
+    ([_, g]) => g?.closures?.length > 0
+  );
+  if (closureAirport) {
+    gates.push(
+      `Airport operational closure NOTAM present (${closureAirport[0]}) – verify runway/taxiway availability.`
+    );
+  }
+
+  // 6️⃣ Maneuver training: discuss recovery altitude and procedure
+  if (isAutorotation) {
+    gates.push(
+      "Autorotation (Full down auto) selected – brief recovery altitude (AGL/MSL), entry/termination criteria, and go-around procedure."
+    );
+  }
+
+  if (isStall) {
+    gates.push(
+      "STALL training selected – brief recovery altitude, configuration (power/flaps), and standard recovery procedure (reduce AoA, add power, minimize altitude loss)."
+    );
+  }
+
+  if (isSpin) {
+    gates.push(
+      "SPIN training selected – brief entry criteria, minimum recovery altitude, and recovery procedure (PARE or school SOP)."
+    );
+  }
+
+  return gates;
+}, [
+  staticChecked,
+  dynamicChecked,
+  flightRules,
+  metarByIcaoData,
+  notamByIcao,
+]);
+
+  /** ---- route behavior (sync arrival in local mode) ---- */
+  const onSetDeparture = useCallback(
+    (val) => {
+      setDeparture(val);
+      if (routeMode === "local") setArrival(val);
+    },
+    [routeMode]
+  );
+
+  const onSelectLocal = useCallback(() => {
+    setRouteMode("local");
+    setArrival(departure);
+    setStops([""]);
+  }, [departure]);
+
+  const onSelectCross = useCallback(() => {
+    setRouteMode("cross");
+    setArrival("");
+    setStops((prev) => (prev.length ? prev : [""]));
+  }, []);
+
+  const addStop = useCallback(() => setStops((prev) => [...prev, ""]), []);
+  const removeStop = useCallback((idx) => {
+    setStops((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      return next.length ? next : [""];
+    });
+  }, []);
+  const updateStop = useCallback((idx, val) => {
+    setStops((prev) => prev.map((s, i) => (i === idx ? val : s)));
+  }, []);
+
+  /** ---- airports list for weather / notams ---- */
+  const airportsForWxAndNotams = useMemo(() => {
+    const dep = normalizeICAO(departure);
+    const arr = normalizeICAO(arrival);
+    const stopList = stops.map(normalizeICAO).filter(Boolean);
+
+    const list = [];
+    if (dep) list.push(dep);
+    list.push(...stopList);
+    if (arr && arr !== dep) list.push(arr);
+
+    return uniq(list);
+  }, [departure, arrival, stops]);
+
+  /** ---- fetch weather ---- */
+  const abortRef = useRef(null);
+
+  const fetchWeather = useCallback(async () => {
+    setWeatherError("");
+    setWeatherLoading(true);
+
+    // abort previous
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const icaos = airportsForWxAndNotams;
+      if (!icaos.length) {
+        setWeatherError("Please enter at least a departure (and optionally stops/arrival).");
+        setWeatherLoading(false);
+        return;
       }
-    }
-    const withinLimitsInput = document.getElementById('withinLimitsText');
-    if (withinLimitsInput) {
-      withinLimitsInput.addEventListener('input', checkWithinLimits);
-    }
 
-    // ETE Calculation Logic
-    function calculateETE() {
-      const etd = document.getElementById('etd').value;
-      const eta = document.getElementById('eta').value;
-      const eteField = document.getElementById('ete');
-      if (etd && eta) {
-        const [etdH, etdM] = etd.split(':').map(Number);
-        const [etaH, etaM] = eta.split(':').map(Number);
-        let etdMinutes = etdH * 60 + etdM;
-        let etaMinutes = etaH * 60 + etaM;
-        // Handle next-day arrival
-        if (etaMinutes < etdMinutes) {
-          etaMinutes += 24 * 60;
-        }
-        const eteMinutes = etaMinutes - etdMinutes;
-        const eteHoursDecimal = (eteMinutes / 60).toFixed(2);
-        eteField.value = eteHoursDecimal;
-      } else {
-        eteField.value = '';
+      // Reset display
+      setMetarByIcaoData({});
+      setTafByIcao({});
+      setAirsigmetSummary("");
+
+      latestAltimeterRef.current = null;
+      latestTemperatureCRef.current = null;
+      setOutsideTemp("");
+      setDaResult("");
+
+      // fetch METAR+TAF per airport in parallel
+      const results = await Promise.all(
+        icaos.map(async (icao) => {
+          const [metar, taf] = await Promise.allSettled([
+            fetchJson(avwxMetarUrl(icao), controller.signal),
+            fetchJson(avwxTafUrl(icao), controller.signal),
+          ]);
+
+          const metarData = metar.status === "fulfilled" ? metar.value : null;
+          const tafData = taf.status === "fulfilled" ? taf.value : null;
+
+          return {
+            icao,
+            metarRaw: metarData?.raw || "Unavailable",
+            flight_rules: metarData?.flight_rules || "",
+            alt: metarData?.altimeter?.value,
+            temp: metarData?.temperature?.value,
+            tafRaw: tafData?.raw || "Unavailable",
+          };
+        })
+      );
+
+      // prefer dep for alt/temp if possible
+      const depICAO = normalizeICAO(departure);
+      const pick = (pred) => results.find(pred) || null;
+
+      const altPick =
+        (depICAO && pick((r) => r.icao === depICAO && typeof r.alt === "number")) ||
+        pick((r) => typeof r.alt === "number");
+      const tempPick =
+        (depICAO && pick((r) => r.icao === depICAO && typeof r.temp === "number")) ||
+        pick((r) => typeof r.temp === "number");
+
+      if (altPick) latestAltimeterRef.current = altPick.alt;
+      if (tempPick) {
+        latestTemperatureCRef.current = tempPick.temp;
+        setOutsideTemp(String(tempPick.temp));
       }
+
+      const metarMap = {};
+      const tafMap = {};
+      for (const r of results) {
+        metarMap[r.icao] = { raw: r.metarRaw, flight_rules: r.flight_rules };
+        tafMap[r.icao] = `${r.icao}: ${r.tafRaw}`;
+      }
+      setMetarByIcaoData(metarMap);
+      setTafByIcao(tafMap);
+
+      // AIRMET/SIGMET once
+      try {
+        const airsigmetData = await fetchJson(avwxAirsigmetUrl(), controller.signal);
+        const summary =
+          Array.isArray(airsigmetData) && airsigmetData.length
+            ? `${airsigmetData.length} active AIRMET/SIGMETs in U.S. FIRs`
+            : "No active AIRMET/SIGMETs";
+        setAirsigmetSummary(summary);
+      } catch {
+        setAirsigmetSummary("AIRMET/SIGMET unavailable");
+      }
+    } catch (e) {
+      if (e?.name !== "AbortError") setWeatherError("Weather fetch failed. Please try again.");
+    } finally {
+      setWeatherLoading(false);
     }
-    const etdInput = document.getElementById('etd');
-    const etaInput = document.getElementById('eta');
-    if (etdInput) etdInput.addEventListener('change', calculateETE);
-    if (etaInput) etaInput.addEventListener('change', calculateETE);
+  }, [airportsForWxAndNotams, departure]);
 
-    // Generate Flight Brief Report Button Logic
-    const generateReportBtn = document.getElementById("generateReportBtn");
-    if (generateReportBtn) {
-      generateReportBtn.addEventListener("click", function () {
-        // Check for within limits confirmation
-        const withinLimitsInput = document.getElementById('withinLimitsText').value.trim().toLowerCase();
-        if (withinLimitsInput !== "within limits") {
-          alert("Please enter 'within limits' to confirm weight & CG limits.");
-          return;
-        }
-        // Gather required info
-        const pilotName = document.getElementById("studentName")?.value || '';
-        const instructorName = document.getElementById("instructorName")?.value || '';
-        const date = document.getElementById("flightDate")?.value || '';
-        const tailNumber = document.getElementById("aircraftId")?.value || '';
-        const fuelOnBoard = document.getElementById("fuel")?.value || '';
-        const dep = document.getElementById("departure")?.value || '';
-        const arr = document.getElementById("arrival")?.value || '';
-        const eta = document.getElementById("eta")?.value || '';
-        const etd = document.getElementById("etd")?.value || '';
-        const lessonPractice = document.getElementById("lessonPractice")?.value || '';
-        const da = document.getElementById("daResult")?.textContent || '';
-        const wnbGross = document.getElementById("grossWeight")?.value || '';
-        const wnbFuelTime = document.getElementById("fuelTime")?.value || '';
-        const weatherNotes = document.getElementById("weatherNotes")?.value || '';
-        const riskComments = document.getElementById("riskComments")?.value || '';
-        // 1. Flight Rules
-        const flightRulesSel = document.getElementById('flight-rules');
-        const flightRules = flightRulesSel ? flightRulesSel.options[flightRulesSel.selectedIndex].value : '';
-        // 2. ETD, ETA, ETE
-        // ETE: recalculate here to be sure
-        let eteStr = '';
-        if (etd && eta) {
-          const [etdH, etdM] = etd.split(':').map(Number);
-          const [etaH, etaM] = eta.split(':').map(Number);
-          let etdMinutes = etdH * 60 + etdM;
-          let etaMinutes = etaH * 60 + etaM;
-          if (etaMinutes < etdMinutes) etaMinutes += 24 * 60;
-          const eteMinutes = etaMinutes - etdMinutes;
-          const eteHoursDecimal = (eteMinutes / 60).toFixed(2);
-          eteStr = eteHoursDecimal;
-        }
-        // 3. Static Risk & Dynamic Risk
-        // Static Risk: checkboxes
-        const staticRiskCheckboxes = Array.from(document.querySelectorAll('.static-risk[type="checkbox"]'));
-        let staticRiskItems = [];
-        let staticRiskScore = 0;
-        staticRiskCheckboxes.forEach(cb => {
-          if (cb.checked) {
-            const label = cb.parentElement.querySelector('label');
-            staticRiskItems.push(`- ${label ? label.textContent.replace(/:$/, '') : cb.name} [${cb.value}]`);
-            staticRiskScore += parseInt(cb.value);
-          }
-        });
-        // IMSAFE
-        const imsafeValue = parseInt(document.getElementById('imsafe-risk').value) || 0;
-        staticRiskScore += imsafeValue;
-        // Dynamic Risk: checkboxes and number
-        const dynamicRiskCheckboxes = Array.from(document.querySelectorAll('.dynamic-risk[type="checkbox"]'));
-        let dynamicRiskItems = [];
-        let dynamicRiskScore = 0;
-        dynamicRiskCheckboxes.forEach(cb => {
-          if (cb.checked) {
-            const label = cb.parentElement.querySelector('label');
-            dynamicRiskItems.push(`- ${label ? label.textContent.replace(/:$/, '') : cb.name} [${cb.value}]`);
-            dynamicRiskScore += parseInt(cb.value);
-          }
-        });
-        // "Other Risks" (number input in dynamic-risk)
-        let otherRisksValue = 0;
-        document.querySelectorAll('.dynamic-risk[type="number"]').forEach(input => {
-          const val = parseInt(input.value) || 0;
-          if (val > 0) {
-            const label = input.parentElement.querySelector('label');
-            dynamicRiskItems.push(`- ${label ? label.textContent.replace(/:$/, '') : input.name} [${val}]`);
-            otherRisksValue += val;
-            dynamicRiskScore += val;
-          }
-        });
-        // 4. IMSAFE & Other Risks (already included above)
-        // riskScore, riskCategory, riskAdvice
-        const riskScore = staticRiskScore + dynamicRiskScore;
-        let riskCategory = '';
-        let riskAdvice = '';
-        if (riskScore <= 10) {
-          riskCategory = '🟢 LOW RISK';
-          riskAdvice = 'Risk acceptable after discussion. Flight may proceed.';
-        } else if (riskScore > 10 && riskScore <= 15) {
-          riskCategory = '🟡 MODERATE RISK';
-          riskAdvice = 'Consult with senior or chief instructor to discuss risk mitigation. May proceed after reduction.';
-        } else {
-          riskCategory = '🔴 HIGH RISK';
-          riskAdvice = 'Flight requires Chief Pilot approval. Discuss flight plan in detail.';
-        }
-        // Compose printable report
-        let reportText = `=== PilotSeal Flight Brief Report ===
+  /** ---- fetch NOTAMs (NMS) ---- */
+  const fetchNotams = useCallback(async () => {
+    setNotamError("");
+    setNotamLoading(true);
 
-PF: ${pilotName}
+    try {
+      const icaos = airportsForWxAndNotams;
+      if (!icaos.length) {
+        setNotamError("Please enter at least a departure (and optionally stops/arrival).");
+        return;
+      }
+
+      const res = await fetch(nmsNotamsUrl(icaos));
+      const data = await res.json();
+
+      if (!res.ok || data?.ok === false) {
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+
+      const list = Array.isArray(data?.notams) ? data.notams : [];
+      const grouped = {};
+      for (const icao of icaos) grouped[icao] = { closures: [], nav: [], general: [] };
+
+      // group by ICAO then categorize
+      const byIcao = {};
+      for (const n of list) {
+        const icao = normalizeICAO(n?.icao);
+        if (!icao) continue;
+        if (!byIcao[icao]) byIcao[icao] = [];
+        byIcao[icao].push(n);
+      }
+      for (const [icao, arr] of Object.entries(byIcao)) {
+        grouped[icao] = categorizeNotams(arr);
+      }
+
+      setNotamByIcao(grouped);
+      // init collapsed state for new airports (default collapsed)
+      setNotamAirportOpen((prev) => {
+        const next = { ...prev };
+        for (const icao of Object.keys(grouped)) {
+          if (next[icao] === undefined) next[icao] = false;
+        }
+        return next;
+      });
+      setNotamCategoryOpen((prev) => {
+        const next = { ...prev };
+        for (const icao of Object.keys(grouped)) {
+          if (next[icao] === undefined) {
+            next[icao] = { closures: true, nav: false, general: false };
+          }
+        }
+        return next;
+      });
+    } catch (e) {
+      setNotamError(`NOTAM fetch failed: ${e?.message || "unknown error"}`);
+    } finally {
+      setNotamLoading(false);
+    }
+  }, [airportsForWxAndNotams]);
+
+  /** ---- calculate DA ---- */
+  const calculateDA = useCallback(() => {
+    const elevationFt = parseFloat(fieldElevation);
+    const temperatureC = parseFloat(outsideTemp);
+    const altimeterInHg = latestAltimeterRef.current;
+
+    if (Number.isNaN(elevationFt)) {
+      setDaResult("Please enter field elevation.");
+      return;
+    }
+    if (altimeterInHg == null || Number.isNaN(temperatureC)) {
+      setDaResult('Weather data is missing or invalid. Please click "Fetch Weather" first.');
+      return;
+    }
+
+    const da = calcDensityAltitudeFt({ elevationFt, temperatureC, altimeterInHg });
+    setDaResult(
+      `Estimated Density Altitude: ${da.toLocaleString()} ft (using Altimeter ${altimeterInHg} inHg)`
+    );
+  }, [fieldElevation, outsideTemp]);
+
+  /** ---- report ---- */
+  const generateReport = useCallback(() => {
+    if (!withinLimitsConfirmed) {
+      alert('Please confirm "within limits" (Weight & CG).');
+      return;
+    }
+
+    const dep = normalizeICAO(departure);
+    const arr = normalizeICAO(arrival);
+
+    const staticLines = [
+      ...checkedItemsLines(STATIC_RISKS, staticChecked),
+      ...(parseInt(imsafe, 10) ? [`- IMSAFE [${parseInt(imsafe, 10)}]`] : []),
+    ];
+    const dynamicLines = [
+      ...checkedItemsLines(DYNAMIC_RISKS, dynamicChecked),
+      ...(parseInt(otherRisks, 10) ? [`- Other Risks [${parseInt(otherRisks, 10)}]`] : []),
+    ];
+
+    // Optional: include NOTAM summary counts
+    const notamSummaryLines = Object.entries(notamByIcao)
+      .filter(([icao]) => airportsForWxAndNotams.includes(icao))
+      .map(([icao, g]) => {
+        const total = (g?.closures?.length || 0) + (g?.nav?.length || 0) + (g?.general?.length || 0);
+        return `${icao}: ${total} (Closures ${g?.closures?.length || 0}, Nav ${g?.nav?.length || 0}, General ${g?.general?.length || 0})`;
+      });
+
+    const reportText = `=== PilotSeal Flight Brief Report ===
+
+PF: ${studentName}
 PIC: ${instructorName}
-Date: ${date}
-Aircraft: ${tailNumber}
-Fuel: ${fuelOnBoard}
+Date: ${flightDate}
+Aircraft: ${aircraftId}
+Fuel: ${fuel}
 
 Flight Rules: ${flightRules}
 
 ETD: ${etd}
 ETA: ${eta}
-ETE: ${eteStr ? eteStr + ' hours' : ''}
+ETE: ${ete ? ete + " hours" : ""}
 
 Departure: ${dep}
 Arrival: ${arr}
@@ -374,305 +622,601 @@ Lesson Practice: ${lessonPractice}
 📝 Notes / NOTAMs:
 ${weatherNotes}
 
-Density Altitude: ${da}
-Gross Weight: ${wnbGross}
-Fuel Time: ${wnbFuelTime}
-Mx Remaining:${getMxRemaining()}
+NOTAM Summary:
+${notamSummaryLines.length ? notamSummaryLines.join("\n") : "(not fetched)"}
+
+Density Altitude: ${daResult}
+Gross Weight: ${grossWeight}
+Fuel Time: ${fuelTime}
+Mx Remaining: ${mxRemaining}
 
 🪨 Static Risk:
-${staticRiskItems.length ? staticRiskItems.join('\n') : '- None'}
-Total Static Risk Score: ${staticRiskScore}
+${staticLines.length ? staticLines.join("\n") : "- None"}
+Total Static Risk Score: ${staticScore}
 
 🌪️ Dynamic Risk:
-${dynamicRiskItems.length ? dynamicRiskItems.join('\n') : '- None'}
-Total Dynamic Risk Score: ${dynamicRiskScore}
+${dynamicLines.length ? dynamicLines.join("\n") : "- None"}
+Total Dynamic Risk Score: ${dynamicScore}
 
-IMSAFE: ${imsafeValue}
-Other Risks: ${otherRisksValue}
-
-Total Risk Score: ${riskScore}
-Category: ${riskCategory}
-Advice: ${riskAdvice}
+Total Risk Score: ${totalRisk}
+Category: ${riskMeta.level}
+Advice: ${riskMeta.advice}
 
 🗒️ Risk Discussion / Comments:
 ${riskComments}
 `;
-        // Use a print area if exists, otherwise open new window
-        let printArea = document.querySelector('.print-area');
-        if (!printArea) {
-          // fallback: open new window for print
-          const reportWindow = window.open("", "_blank");
-          reportWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <title>PilotSeal Flight Brief Report</title>
-              <style>
-                body { font-family: 'Consolas', 'Menlo', 'Monaco', monospace; white-space: pre-wrap; margin: 2em; }
-                h1 { font-size: 1.6em; font-weight: bold; margin-bottom: 1em; }
-              </style>
-            </head>
-            <body>
-              <pre>${reportText.replace(/</g, '&lt;')}</pre>
-              
-            </body>
-            </html>
-          `);
-          reportWindow.document.close();
-        } else {
-          printArea.innerText = reportText;
-          //window.print();
-        }
-      });
+
+    const reportWindow = window.open("", "_blank");
+    if (!reportWindow) {
+      alert("Popup blocked. Please allow popups to generate the report.");
+      return;
     }
-  }, []);
+    reportWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>PilotSeal Flight Brief Report</title>
+  <style>
+    body { font-family: Consolas, Menlo, Monaco, monospace; white-space: pre-wrap; margin: 2em; }
+  </style>
+</head>
+<body>
+<pre>${escapeHtml(reportText)}</pre>
+</body>
+</html>`);
+    reportWindow.document.close();
+  }, [
+    withinLimitsConfirmed,
+    studentName,
+    instructorName,
+    flightDate,
+    aircraftId,
+    fuel,
+    flightRules,
+    etd,
+    eta,
+    ete,
+    departure,
+    arrival,
+    lessonPractice,
+    weatherNotes,
+    notamByIcao,
+    airportsForWxAndNotams,
+    daResult,
+    grossWeight,
+    fuelTime,
+    mxRemaining,
+    staticChecked,
+    dynamicChecked,
+    imsafe,
+    otherRisks,
+    staticScore,
+    dynamicScore,
+    totalRisk,
+    riskMeta.level,
+    riskMeta.advice,
+    riskComments,
+  ]);
+
+  /** ------------------ render helpers ------------------ */
+  const renderedNotamAirports = useMemo(() => {
+    const keys = Object.keys(notamByIcao || {});
+    // keep ordering like airports list
+    const ordered = airportsForWxAndNotams.filter((a) => keys.includes(a));
+    // plus any extras
+    const extras = keys.filter((k) => !ordered.includes(k));
+    return [...ordered, ...extras];
+  }, [notamByIcao, airportsForWxAndNotams]);
 
   return (
     <div className="flightbrief-body">
       <div className="flight-section">
         <h1 className="text-3xl font-bold text-center mb-6">✈️ Flight Brief</h1>
-        <hr className="dived-line"/>
+        <hr className="dived-line" />
+
         <h2 className="text-xl font-bold mb-4">📓Information</h2>
-        <form className="space-y-4">
+
+        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <div className="inline-label-input">
             <label className="label" htmlFor="studentName">Student Name(Pilot Flying):</label>
-            <input type="text" id="studentName" className="input-field" required />
+            <input type="text" id="studentName" className="input-field" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="instructorName">Instructor Name(Pilot In Command):</label>
-            <input type="text" id="instructorName" className="input-field" required />
+            <input type="text" id="instructorName" className="input-field" value={instructorName} onChange={(e) => setInstructorName(e.target.value)} required />
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="flight-rules">Flight Rules:</label>
-            <select id="flight-rules" className="input-field" title="Select flight rules">
+            <select id="flight-rules" className="input-field" value={flightRules} onChange={(e) => setFlightRules(e.target.value)} title="Select flight rules">
               <option value="VFR">VFR</option>
               <option value="IFR">IFR</option>
             </select>
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="flightDate">Select Date</label>
-            <input type="date" id="flightDate" className="input-field" required placeholder="Select date" title="Select date" lang="en" />
+            <input type="date" id="flightDate" className="input-field" value={flightDate} onChange={(e) => setFlightDate(e.target.value)} required title="Select date" lang="en" />
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="etd">Estimated Time of Departure (ETD)</label>
-            <input type="time" id="etd" className="input-field" required placeholder="Select time" title="Select time" />
+            <input type="time" id="etd" className="input-field" value={etd} onChange={(e) => setEtd(e.target.value)} required />
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="eta">Estimated Time of Arrival (ETA)</label>
-            <input type="time" id="eta" className="input-field" required placeholder="Select time" title="Select time" />
+            <input type="time" id="eta" className="input-field" value={eta} onChange={(e) => setEta(e.target.value)} required />
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="ete">Estimated Time Enroute (ETE)</label>
-            <input type="text" id="ete" className="input-field" readOnly placeholder="Auto-calculated" title="Calculated ETE" />
+            <input type="text" id="ete" className="input-field" readOnly value={ete} placeholder="Auto-calculated" />
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="aircraftId">Aircraft Tail Number:</label>
-            <input type="text" id="aircraftId" className="input-field" required />
+            <input type="text" id="aircraftId" className="input-field" value={aircraftId} onChange={(e) => setAircraftId(e.target.value)} required />
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="fuel">Fuel Onboard (Gallons):</label>
-            <input type="number" id="fuel" className="input-field" required />
+            <input type="number" id="fuel" className="input-field" value={fuel} onChange={(e) => setFuel(e.target.value)} required />
           </div>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="fuelTime">Fuel Time (hrs):</label>
-            <input type="number" id="fuelTime" className="input-field" placeholder="e.g. 2.5" />
+            <input type="number" id="fuelTime" className="input-field" value={fuelTime} onChange={(e) => setFuelTime(e.target.value)} placeholder="e.g. 2.5" />
           </div>
-          <hr className="dived-line"/>
+
+          <hr className="dived-line" />
+
           <h2 className="text-xl font-bold mb-4">🛫 Route</h2>
+
           <div className="inline-label-input">
             <label className="label" htmlFor="departure">Departure Point:</label>
-            <input type="text" id="departure" className="input-field" required />
+            <input type="text" id="departure" className="input-field" value={departure} onChange={(e) => onSetDeparture(e.target.value)} required />
           </div>
+
           <div className="flex items-center gap-4 mt-4">
-            <button type="button" id="btnCross" className="btn-toggle">Cross Country</button>
-            <button type="button" id="btnLocal" className="btn-toggle">Local Practice</button>
+            <button type="button" className={`btn-toggle ${routeMode === "cross" ? "active" : ""}`} onClick={onSelectCross}>
+              Cross Country
+            </button>
+            <button type="button" className={`btn-toggle ${routeMode === "local" ? "active" : ""}`} onClick={onSelectLocal}>
+              Local Practice
+            </button>
           </div>
-          <div id="crossCountryFields" className="space-y-3 mt-4 hidden" hidden>
-            <label className="label">Intermediate Stop</label>
-            <div className="flex items-center gap-2">
-              <input type="text" name="stop[]" className="stop-input input-field" />
-              <button type="button" className="remove-stop text-red-500 font-bold">✕</button>
+
+          {routeMode === "cross" && (
+            <div className="space-y-3 mt-4">
+              <label className="label">Intermediate Stop</label>
+
+              {stops.map((s, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input type="text" className="stop-input input-field" value={s} onChange={(e) => updateStop(idx, e.target.value)} placeholder="e.g. KSQL" />
+                  <button type="button" className="remove-stop text-red-500 font-bold" onClick={() => removeStop(idx)} aria-label="Remove stop" title="Remove stop">✕</button>
+                </div>
+              ))}
+
+              <button type="button" id="addStop" className="text-blue-600 underline text-sm" onClick={addStop}>+ Add Another Stop</button>
             </div>
-            <button type="button" id="addStop" className="text-blue-600 underline text-sm">+ Add Another Stop</button>
-          </div>
+          )}
+
           <div className="inline-label-input mt-4">
             <label className="label" htmlFor="arrival">Arrival Point:</label>
-            <input type="text" id="arrival" className="input-field" required />
+            <input type="text" id="arrival" className="input-field" value={arrival} onChange={(e) => setArrival(e.target.value)} required readOnly={routeMode === "local"} />
           </div>
+
           <div className="section inline-label-input">
             <label className="label" htmlFor="lessonPractice"><strong>✏️ Lesson Practice:</strong></label>
-            <input type="text" id="lessonPractice" className="input-field" placeholder="e.g., Steep Turns, Slow Flight, Short Field Landing"/>
+            <input type="text" id="lessonPractice" className="input-field" value={lessonPractice} onChange={(e) => setLessonPractice(e.target.value)} placeholder="e.g., Steep Turns, Slow Flight, Short Field Landing" />
           </div>
         </form>
-      <hr className="dived-line"/>
-      <h2 className="text-xl font-bold mb-4">🌦️ Weather Information</h2>
-      <div id="weather-section" className="space-y-6">
-        <div className="text-center">
-          <button id="fetchWeatherBtn" type="button" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-            Fetch Weather
+
+        <hr className="dived-line" />
+
+        <h2 className="text-xl font-bold mb-4">🌦️ Weather Information</h2>
+
+        <div className="space-y-6">
+          <div className="text-center" style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+              onClick={fetchWeather}
+              disabled={weatherLoading}
+            >
+              {weatherLoading ? "Fetching..." : "Fetch Weather"}
+            </button>
+
+            <button
+              type="button"
+              className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+              onClick={fetchNotams}
+              disabled={notamLoading}
+              title="Fetch NOTAMs from FAA NMS via your Worker"
+            >
+              {notamLoading ? "Fetching NOTAMs..." : "Fetch NOTAMs"}
+            </button>
+
+            <span style={{ fontSize: 12, color: "#666", alignSelf: "center" }}>
+              Airports: {airportsForWxAndNotams.join(", ") || "(none)"}
+            </span>
+          </div>
+
+          {weatherError && (
+            <div className="bg-red-50 border border-red-200 p-3 rounded text-red-700">{weatherError}</div>
+          )}
+          {notamError && (
+            <div className="bg-red-50 border border-red-200 p-3 rounded text-red-700">{notamError}</div>
+          )}
+
+          <div>
+            <h3>🟢 METAR</h3>
+            <div className="space-y-2">
+              {Object.keys(metarByIcaoData).length === 0 ? (
+                <div className="text-sm text-gray-500">No METAR yet.</div>
+              ) : (
+                Object.entries(metarByIcaoData).map(([icao, data]) => {
+                  const meta = getFlightCategoryMeta(data?.flight_rules);
+                  return (
+                    <div
+                      key={icao}
+                      className="p-3 rounded border mb-3"
+                      style={{ borderLeft: `6px solid ${meta.color}`, backgroundColor: meta.bg }}
+                      title={meta.desc}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <strong className="text-lg">{icao}</strong>
+                        <span
+                          style={{
+                            backgroundColor: meta.color,
+                            color: "white",
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {meta.label}
+                        </span>
+                      </div>
+                      <code className="text-sm block" style={{ whiteSpace: "pre-wrap" }}>
+                        {data?.raw || "Unavailable"}
+                      </code>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3>🟡 TAF</h3>
+            <div className="space-y-2">
+              {Object.keys(tafByIcao).length === 0 ? (
+                <div className="text-sm text-gray-500">No TAF yet.</div>
+              ) : (
+                Object.entries(tafByIcao).map(([icao, text]) => (
+                  <div key={icao} className="bg-gray-100 p-3 rounded border mb-2" style={{ whiteSpace: "pre-wrap" }}>
+                    {text}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3>🔴 AIRMET/SIGMET</h3>
+            <div className="space-y-2">
+              <div className="bg-gray-100 p-3 rounded border">
+                {airsigmetSummary || "No active AIRMET/SIGMETs (or not fetched)."}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="section-subtitle">📏 Density Altitude (DA)</h3>
+            <div className="inline-label-input">
+              <label className="label" htmlFor="fieldElevation">Field Elevation (ft)</label>
+              <input type="number" id="fieldElevation" className="input-field" value={fieldElevation} onChange={(e) => setFieldElevation(e.target.value)} placeholder="e.g. 2500" />
+            </div>
+
+            <div className="inline-label-input">
+              <label className="label" htmlFor="outsideTemp">Outside Air Temperature (°C)</label>
+              <input type="number" id="outsideTemp" className="input-field" readOnly value={outsideTemp} placeholder="(auto from METAR)" />
+            </div>
+
+            <button type="button" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-2" onClick={calculateDA}>
+              Calculate DA
+            </button>
+
+            <div className="text-sm text-gray-700 font-medium mt-2">{daResult}</div>
+          </div>
+
+          {/* Smart NOTAMs */}
+{/* Smart NOTAMs */}
+<div className="mt-6">
+  <h3 className="text-xl font-bold mb-3">📢 Smart NOTAMs</h3>
+
+  {renderedNotamAirports.length === 0 ? (
+    <div className="text-sm text-gray-500">No NOTAMs fetched yet. Click “Fetch NOTAMs”.</div>
+  ) : (
+    renderedNotamAirports.map((icao) => {
+      const groups = notamByIcao?.[icao] || { closures: [], nav: [], general: [] };
+      const closures = groups.closures || [];
+      const nav = groups.nav || [];
+      const general = groups.general || [];
+
+      const total = closures.length + nav.length + general.length;
+      const airportOpen = !!notamAirportOpen?.[icao];
+
+      const catState = notamCategoryOpen?.[icao] || { closures: true, nav: false, general: false };
+
+      const Category = ({ k, title, badgeStyle, items }) => {
+        const open = !!catState[k];
+        return (
+          <div style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              onClick={() => toggleCategory(icao, k)}
+              className="w-full"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "8px 10px",
+                border: "1px solid #e5e7eb",
+                borderRadius: 8,
+                background: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={badgeStyle}>{title}</span>
+                <span style={{ fontSize: 12, color: "#666" }}>{items.length}</span>
+              </div>
+              <span style={{ fontSize: 12, color: "#666" }}>{open ? "▲" : "▼"}</span>
+            </button>
+
+            {open && items.length > 0 && (
+              <ul className="list-disc ml-5 mt-2 text-sm" style={{ color: "#111827" }}>
+                {items.map((n, idx) => (
+                  <li key={`${n.id || idx}`} style={{ whiteSpace: "pre-wrap", marginBottom: 6 }}>
+                    {n.text || n.raw || ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {open && items.length === 0 && (
+              <div className="text-xs text-gray-500 mt-2">None.</div>
+            )}
+          </div>
+        );
+      };
+
+      return (
+        <div key={icao} className="mb-4">
+          {/* Airport header (collapsed by default) */}
+          <button
+            type="button"
+            onClick={() => toggleAirport(icao)}
+            className="w-full"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid #e5e7eb",
+              background: airportOpen ? "#f9fafb" : "#fff",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <span style={{ fontWeight: 800, color: "#1f2937" }}>{icao}</span>
+
+              {/* quick risk cue: closures count */}
+              {closures.length > 0 && (
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    background: "#fee2e2",
+                    color: "#b91c1c",
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                  }}
+                >
+                  Closures {closures.length}
+                </span>
+              )}
+
+              <span style={{ fontSize: 12, color: "#6b7280" }}>Total {total}</span>
+            </div>
+
+            <span style={{ fontSize: 12, color: "#6b7280" }}>{airportOpen ? "▲" : "▼"}</span>
           </button>
+
+          {/* Airport body */}
+          {airportOpen && (
+            <div style={{ padding: "10px 4px 0 4px" }}>
+              <Category
+                k="closures"
+                title="⚠️ CLOSURES & SAFETY"
+                badgeStyle={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  background: "#fee2e2",
+                  color: "#b91c1c",
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                }}
+                items={closures}
+              />
+              <Category
+                k="nav"
+                title="📡 NAV & COMM"
+                badgeStyle={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  background: "#dbeafe",
+                  color: "#1d4ed8",
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                }}
+                items={nav}
+              />
+              <Category
+                k="general"
+                title="📄 GENERAL"
+                badgeStyle={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                }}
+                items={general}
+              />
+            </div>
+          )}
         </div>
-        <div>
-          <h3>🟢 METAR</h3>
-          <div id="metar-section" className="space-y-2"></div>
+      );
+    })
+  )}
+</div>
         </div>
-        <div>
-          <h3>🟡 TAF</h3>
-          <div id="taf-section" className="space-y-2"></div>
+
+        {/* Notes / NOTAMs free text */}
+        <div className="section inline-label-input">
+          <label className="label" htmlFor="weatherNotes"><strong>📝 Notes / NOTAMs</strong></label>
+          <textarea
+            id="weatherNotes"
+            rows="3"
+            className="input-field"
+            value={weatherNotes}
+            onChange={(e) => setWeatherNotes(e.target.value)}
+            placeholder="Enter ATIS, personal notes, mitigation actions, etc..."
+          />
         </div>
-        <div>
-          <h3>🔴 AIRMET/SIGMET</h3>
-          <div id="airsigmet-section" className="space-y-2"></div>
-        </div>
-        <div>
-          <h3 className="section-subtitle">📏 Density Altitude (DA)</h3>
+
+        <hr className="dived-line" />
+
+        <h2 className="text-xl font-bold mb-4">⚖️ Aircraft Conditions</h2>
+        <div className="space-y-4">
           <div className="inline-label-input">
-            <label className="label" htmlFor="fieldElevation">Field Elevation (ft)</label>
-            <input type="number" id="fieldElevation" className="input-field" placeholder="e.g. 2500" />
+            <label className="label" htmlFor="grossWeight">Total Gross Weight (lbs):</label>
+            <input type="number" id="grossWeight" className="input-field" value={grossWeight} onChange={(e) => setGrossWeight(e.target.value)} placeholder="e.g. 2400" />
           </div>
+
           <div className="inline-label-input">
-            <label className="label" htmlFor="outsideTemp">Outside Air Temperature (°C)</label>
-            <input type="number" id="outsideTemp" className="input-field" readOnly />
+            <label className="label" htmlFor="withinLimitsConfirmed">
+              Confirm weight & CG <strong>within limits</strong>:
+            </label>
+            <input
+              id="withinLimitsConfirmed"
+              type="checkbox"
+              checked={withinLimitsConfirmed}
+              onChange={(e) => setWithinLimitsConfirmed(e.target.checked)}
+              style={{ transform: "scale(1.2)" }}
+            />
+            <span className={`text-sm ml-2 ${withinLimitsConfirmed ? "text-green-600" : "text-red-600"}`}>
+              {withinLimitsConfirmed ? "✅ Confirmed" : "❌ Not Confirmed"}
+            </span>
           </div>
-          <button type="button" id="calculateDA" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-2">
-            Calculate DA
-          </button>
-          <div id="daResult" className="text-sm text-gray-700 font-medium mt-2"></div>
-        </div>
-      </div>
-      {/* Notes / NOTAMs section inserted after weather information, before Weight & Balance */}
-      <div className="section inline-label-input">
-        <label className="label" htmlFor="weatherNotes"><strong>📝 Notes / NOTAMs</strong></label>
-        <textarea id="weatherNotes" rows="3" className="input-field" placeholder="Enter NOTAMs, ATIS, or other relevant notes here..."></textarea>
-      </div>
-      <hr className="dived-line"/>
-      <h2 className="text-xl font-bold mb-4">⚖️ Aircraft Conditions</h2>
-      <div className="space-y-4">
-        <div className="inline-label-input">
-          <label className="label" htmlFor="grossWeight">Total Gross Weight (lbs):</label>
-          <input type="number" id="grossWeight" className="input-field" placeholder="e.g. 2400" />
-        </div>
-        <div className="inline-label-input">
-          <label className="label" htmlFor="withinLimitsText">Enter "within limits" to confirm:</label>
-          <input type="text" id="withinLimitsText" className="input-field" placeholder="within limits" />
-          <span id="withinLimitsStatus" className="text-sm ml-2"></span>
-        </div>
-        <div className="inline-label-input">
-          <label className="label" htmlFor="mx-now">Mx Time Now:</label>
-          <input type="number" id="mx-now" className="input-field" placeholder="Check Aircraft" />
-        </div>
-        <div className="inline-label-input">
-          <label className="label" htmlFor="mx-due">Next Mx Due:</label>
-          <input type="number" id="mx-due" className="input-field" placeholder="Next 100 hr/annual eg." />
-        </div>
-      </div>
-      <hr className="dived-line"/>
-      <h2>🧭 Risk Assessment</h2>
-      <div className="risk-columns">
-        <div className="static-risk-column">
-          <h3>🪨 Static Risk</h3>
-          <div className="risk-item">
-            <label htmlFor="static-dual-flight">Dual flight:</label>
-            <input type="checkbox" className="static-risk" value="1" id="static-dual-flight" name="static-dual-flight" />
+
+          <div className="inline-label-input">
+            <label className="label" htmlFor="mx-now">Mx Time Now:</label>
+            <input type="number" id="mx-now" className="input-field" value={mxNow} onChange={(e) => setMxNow(e.target.value)} placeholder="Check Aircraft" />
           </div>
-          <div className="risk-item">
-            <label htmlFor="static-training-pre-solo">Training Pre-solo student:</label>
-            <input type="checkbox" className="static-risk" value="3" id="static-training-pre-solo" name="static-training-pre-solo" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="static-solo-student">SOLO student:</label>
-            <input type="checkbox" className="static-risk" value="3" id="static-solo-student" name="static-solo-student" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="static-dpe-check">DPE or Check flight:</label>
-            <input type="checkbox" className="static-risk" value="2" id="static-dpe-check" name="static-dpe-check" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="imsafe-risk">IMSAFE (each factor counts 1):</label>
-            <input type="number" id="imsafe-risk" name="imsafe-risk" min="0" max="6" defaultValue="0" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="static-first-fly-fi">First fly with FI:</label>
-            <input type="checkbox" className="static-risk" value="1" id="static-first-fly-fi" name="static-first-fly-fi" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="static-different-model">Different model:</label>
-            <input type="checkbox" className="static-risk" value="1" id="static-different-model" name="static-different-model" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="static-last-flight-30">Last flight &gt;30 days:</label>
-            <input type="checkbox" className="static-risk" value="1" id="static-last-flight-30" name="static-last-flight-30" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="static-acft-time-40">Aircraft time &lt; 40 hours (Rated):</label>
-            <input type="checkbox" className="static-risk" value="1" id="static-acft-time-40" name="static-acft-time-40" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="static-fi-dual-200">FI &lt; 200 hours Dual given:</label>
-            <input type="checkbox" className="static-risk" value="1" id="static-fi-dual-200" name="static-fi-dual-200" />
+
+          <div className="inline-label-input">
+            <label className="label" htmlFor="mx-due">Next Mx Due:</label>
+            <input type="number" id="mx-due" className="input-field" value={mxDue} onChange={(e) => setMxDue(e.target.value)} placeholder="Next 100 hr/annual eg." />
           </div>
         </div>
-        <div className="dynamic-risk-column">
-          <h3>🌪️ Dynamic Risk</h3>
-          <div className="risk-item">
-            <label htmlFor="dynamic-night-ops">Night ops:</label>
-            <input type="checkbox" className="dynamic-risk" value="1" id="dynamic-night-ops" name="dynamic-night-ops" />
+
+        <hr className="dived-line" />
+
+        <h2>🧭 Risk Assessment</h2>
+        <div className="risk-columns">
+          <div className="static-risk-column">
+            <h3>🪨 Static Risk</h3>
+            {STATIC_RISKS.map((r) => (
+              <div className="risk-item" key={r.id}>
+                <label htmlFor={r.id}>{r.label}:</label>
+                <input
+                  type="checkbox"
+                  id={r.id}
+                  checked={!!staticChecked[r.id]}
+                  onChange={(e) => setStaticChecked((prev) => ({ ...prev, [r.id]: e.target.checked }))}
+                />
+              </div>
+            ))}
+            <div className="risk-item">
+              <label htmlFor="imsafe-risk">IMSAFE (each factor counts 1):</label>
+              <input type="number" id="imsafe-risk" min="0" max="6" value={imsafe} onChange={(e) => setImsafe(e.target.value)} />
+            </div>
           </div>
-          <div className="risk-item">
-            <label htmlFor="dynamic-last-night-30">Last night &gt;30 days:</label>
-            <input type="checkbox" className="dynamic-risk" value="1" id="dynamic-last-night-30" name="dynamic-last-night-30" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="dynamic-svfr">SVFR:</label>
-            <input type="checkbox" className="dynamic-risk" value="1" id="dynamic-svfr" name="dynamic-svfr" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="dynamic-gust-spread">Gust spread &gt; 13 kt:</label>
-            <input type="checkbox" className="dynamic-risk" value="1" id="dynamic-gust-spread" name="dynamic-gust-spread" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="dynamic-other-fi-cancel">Other FI cancellation due to WX:</label>
-            <input type="checkbox" className="dynamic-risk" value="1" id="dynamic-other-fi-cancel" name="dynamic-other-fi-cancel" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="dynamic-max-fuel-flight">Max fuel flight:</label>
-            <input type="checkbox" className="dynamic-risk" value="1" id="dynamic-max-fuel-flight" name="dynamic-max-fuel-flight" />
-          </div>
-          {/* 新增 Full down auto 选项 */}
-          <div className="risk-item">
-            <label htmlFor="full-down-auto">Full down auto:</label>
-            <input type="checkbox" className="dynamic-risk" value="1" id="full-down-auto" name="full-down-auto" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="dynamic-stall-training">STALL Training:</label>
-            <input type="checkbox" className="dynamic-risk" value="1" id="dynamic-stall-training" name="dynamic-stall-training" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="dynamic-spin-training">SPIN Training:</label>
-            <input type="checkbox" className="dynamic-risk" value="2" id="dynamic-spin-training" name="dynamic-spin-training" />
-          </div>
-          <div className="risk-item">
-            <label htmlFor="other-risk">Other Risks:</label>
-            <input type="number" className="dynamic-risk" name="other-risk" min="0" max="5" defaultValue="0" />
+
+          <div className="dynamic-risk-column">
+            <h3>🌪️ Dynamic Risk</h3>
+            {DYNAMIC_RISKS.map((r) => (
+              <div className="risk-item" key={r.id}>
+                <label htmlFor={r.id}>{r.label}:</label>
+                <input
+                  type="checkbox"
+                  id={r.id}
+                  checked={!!dynamicChecked[r.id]}
+                  onChange={(e) => setDynamicChecked((prev) => ({ ...prev, [r.id]: e.target.checked }))}
+                />
+              </div>
+            ))}
+            <div className="risk-item">
+              <label htmlFor="other-risk">Other Risks:</label>
+              <input id="other-risk" type="number" min="0" max="5" value={otherRisks} onChange={(e) => setOtherRisks(e.target.value)} />
+            </div>
           </div>
         </div>
+
+        <div className="section inline-label-input">
+          <label className="label" htmlFor="riskComments"><strong>🗒️ Risk Discussion / Comments</strong></label>
+          <textarea id="riskComments" rows="3" className="input-field" value={riskComments} onChange={(e) => setRiskComments(e.target.value)} placeholder="Notes from discussion with senior/chief pilot..." />
+        </div>
+
+        <div style={{ fontWeight: "bold", marginTop: "10px" }}>
+          Total Risk Score: <span>{totalRisk}</span>
+          <span style={{ marginLeft: "15px", fontWeight: "bold", color: riskMeta.color }}>{riskMeta.level}</span>
+          <div style={{ marginTop: "5px", fontStyle: "italic" }}>{riskMeta.advice}</div>
+        </div>
+        {riskGates.length > 0 && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid #f59e0b",
+              background: "#fffbeb",
+              color: "#92400e",
+            }}
+          >
+            <div style={{ fontWeight: 900, marginBottom: 6 }}>⚠️ Mandatory Review Items</div>
+            <ul style={{ marginLeft: 18, listStyle: "disc" }}>
+              {riskGates.map((g, idx) => (
+                <li key={idx} style={{ marginBottom: 4 }}>
+                  {g}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div style={{ textAlign: "center", marginTop: "2rem" }}>
+          <button type="button" onClick={generateReport}>Generate Flight Brief Report</button>
+        </div>
       </div>
-      {/* Risk Discussion / Comments section at page bottom */}
-      <div className="section inline-label-input">
-        <label className="label" htmlFor="riskComments"><strong>🗒️ Risk Discussion / Comments</strong></label>
-        <textarea id="riskComments" rows="3" className="input-field" placeholder="Notes from discussion with senior/chief pilot..."></textarea>
-      </div>
-      <div id="totalRiskScore" style={{ fontWeight: "bold", marginTop: "10px" }}>
-        Total Risk Score: <span id="riskScoreValue">0</span>
-        <span id="riskScoreLevel" style={{ marginLeft: "15px", fontWeight: "bold" }}></span>
-        <div id="riskRecommendation" style={{ marginTop: "5px", fontStyle: "italic" }}></div>
-      </div>
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        <button id="generateReportBtn" type="button">Generate Flight Brief Report</button>
-      </div>
-    </div>
     </div>
   );
 }
-
-export default FlightBrief;
