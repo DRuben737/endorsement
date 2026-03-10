@@ -1,76 +1,81 @@
 .menu-toggle {
   display: none;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  font-size: 1.35rem;
   cursor: pointer;
-  color: #444;
+  color: #0f172a;
   margin-left: auto;
+  padding: 0.55rem 0.8rem;
+  border-radius: 12px;
 }
+
 .app-header {
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 8px 32px; /* tighter vertical padding */
+  background-color: rgba(249, 250, 251, 0.82);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  padding: 10px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: sticky;
   top: 0;
   z-index: 1000;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06); /* added subtle shadow */
-  height: 80px;
+  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+  min-height: 78px;
+  backdrop-filter: blur(14px);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.header-wrapper {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
+  gap: 10px;
 }
 
 .logo {
-  height: 50px;
-  margin-right: 12px;
+  height: 48px;
+  width: 48px;
+  object-fit: contain;
+}
+
+.site-title {
+  margin: 0;
 }
 
 .title-link {
-  font-size: 2.8rem;
+  font-size: clamp(1.7rem, 2.5vw, 2.4rem);
   font-weight: 800;
-  color: #20255c;
-  font-family: 'Comic Neue', 'Segoe UI', cursive, sans-serif;
+  color: #0f172a;
+  font-family: 'Avenir Next Condensed', 'Trebuchet MS', sans-serif;
   text-decoration: none;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.04em;
 }
 
 .nav-links {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
 }
+
 .nav-links a {
-  background-color: #0077cc;
-  color: #ffffff;
-  font-weight: 500;
-  font-size: 0.9rem;
-  padding: 8px 14px;
-  border-radius: 6px;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 10px 14px;
+  border-radius: 999px;
   text-decoration: none;
-  box-shadow: 0 1px 3px rgba(0, 119, 204, 0.25);
-  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
 
 .nav-links a:hover {
-  background-color: #005fa3;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 95, 163, 0.3);
+  background-color: rgba(15, 118, 110, 0.08);
+  color: #0f766e;
+}
+
+.nav-links a.active {
+  background: linear-gradient(135deg, #0f766e, #0f4c81);
+  color: #fff;
 }
 
 @media (max-width: 768px) {
@@ -81,15 +86,17 @@
   .nav-links {
     display: none;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
+    align-items: stretch;
+    gap: 6px;
     position: absolute;
-    top: 80px;
-    right: 32px;
-    background-color: #f9fafb;
+    top: calc(100% + 8px);
+    right: 16px;
+    min-width: 210px;
+    background-color: rgba(255, 255, 255, 0.96);
     padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 16px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+    border: 1px solid rgba(148, 163, 184, 0.14);
   }
 
   .nav-links.open {
@@ -98,49 +105,36 @@
 
   .nav-links a {
     width: 100%;
-    max-width: 200px;
-    text-align: center;
-    margin-bottom: 8px;
+    text-align: left;
   }
 }
 
-/* Mobile-friendly header logo/title layout */
 @media (max-width: 640px) {
+  .app-header {
+    padding: 10px 16px;
+  }
+
   .header-left {
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
+    min-width: 0;
   }
 
   .logo {
-    margin-right: 0;
-    margin-bottom: 4px;
+    height: 42px;
+    width: 42px;
   }
 
   .title-link {
-    font-size: 2rem;
-    text-align: center;
-  }
-
-  .menu-toggle {
-    margin-left: 0;
-    margin-right: 0;
+    font-size: 1.5rem;
   }
 }
 
 @media (max-width: 1024px) and (min-width: 641px) {
   .nav-links {
-    gap: 12px; /* 缩小按钮间距 */
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 8px;
   }
 
   .nav-links a {
-    font-size: 0.85rem; /* 缩小字体 */
-    padding: 6px 12px; /* 减少按钮内边距 */
-  }
-
-  .title-link {
-    font-size: 2.2rem; /* 调整标题字体 */
+    font-size: 0.85rem;
+    padding: 8px 12px;
   }
 }

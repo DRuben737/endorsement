@@ -4,28 +4,25 @@ import styles from '../css/HomePage.module.css';
 
 const features = [
   {
-    icon: "✅",
-    title: "Endorsement Generator",
-    description: "Generate FAA-compliant logbook endorsements quickly.",
-    link: "/endorsement-generator",
-    comingSoon: false,
-    image: require('../images/feature1.png')
+    title: 'Endorsement Generator',
+    description: 'Build endorsement draft packets faster with template search, signatures, and clean PDF output.',
+    link: '/endorsement-generator',
+    eyebrow: 'Most used',
+    image: require('../images/feature1.png'),
   },
   {
-    icon: "📋",
-    title: "Flight Brief Tool",
-    description: "Preflight planning, risk assessment, weather, W&B and more.",
-    link: "/flight-brief",
-    comingSoon: false,
-    image: require('../images/feature2.png')
+    title: 'Flight Brief Tool',
+    description: 'Combine weather context, planning notes, and operational checks in one preflight workflow.',
+    link: '/flight-brief',
+    eyebrow: 'Preflight',
+    image: require('../images/feature2.png'),
   },
   {
-    icon: "⚖️",
-    title: "Weight & Balance",
-    description: "Quick check before your roll",
-    link: "/wb",
-    comingSoon: false,
-    image: require('../images/feature4.png')
+    title: 'Weight & Balance',
+    description: 'Run loading scenarios quickly and catch envelope issues before they become dispatch mistakes.',
+    link: '/wb',
+    eyebrow: 'Safety',
+    image: require('../images/feature4.png'),
   },
 ];
 
@@ -34,43 +31,74 @@ const HomePage = () => {
 
   return (
     <div className={styles.heroWrapper}>
-      <div className={styles.heroContent}>
-        <p className={styles.tagline}>
-          All-in-one tools for flight instructors and students
-        </p>
-        <div className={styles.ctaButtons}>
-          <button
-            className={styles.primaryBtn}
-            onClick={() => {
-              const target = document.getElementById('features');
-              target?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            Get Started
-          </button>
-          <button className={styles.secondaryBtn} onClick={() => navigate('/about')}>Learn More</button>
+      <section className={styles.heroPanel}>
+        <div className={styles.heroContent}>
+          <p className={styles.kicker}>PilotSeal Toolkit</p>
+          <h1 className={styles.heroTitle}>Sharper tools for training, endorsements, and flight prep.</h1>
+          <p className={styles.tagline}>
+            Reduce repetitive paperwork, tighten your preflight workflow, and keep the core student-facing tools in one place.
+          </p>
+          <div className={styles.ctaButtons}>
+            <button
+              className={styles.primaryBtn}
+              onClick={() => navigate('/endorsement-generator')}
+            >
+              Open Endorsement Generator
+            </button>
+            <button
+              className={styles.secondaryBtn}
+              onClick={() => {
+                const target = document.getElementById('features');
+                target?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Browse Tools
+            </button>
+          </div>
         </div>
+
+        <div className={styles.heroStats}>
+          <div className={styles.statCard}>
+            <strong>3</strong>
+            <span>core workflows surfaced on the home page</span>
+          </div>
+          <div className={styles.statCard}>
+            <strong>PDF</strong>
+            <span>export-ready outputs for paper or digital use</span>
+          </div>
+          <div className={styles.statCard}>
+            <strong>Mobile</strong>
+            <span>responsive layout for ramp-side use</span>
+          </div>
+        </div>
+      </section>
+
+      <div className={styles.quickList}>
+        <div>
+          <h2>What's improved</h2>
+          <p>Cleaner navigation, more focused tool cards, and a stronger foundation for adding more aviation utilities without the UI drifting.</p>
+        </div>
+        <button className={styles.inlineLink} onClick={() => navigate('/about')}>
+          Read project background
+        </button>
       </div>
 
       <div id="features" className={styles.featureSection}>
-        {features.map((feature, index) => (
-          <div key={index} className={styles.card}>
+        {features.map((feature) => (
+          <article key={feature.title} className={styles.card}>
             <img src={feature.image} alt={feature.title} />
             <div className={styles.cardContent}>
+              <span className={styles.eyebrow}>{feature.eyebrow}</span>
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
-              {feature.comingSoon ? (
-                <span className={styles.comingSoon}>Coming Soon</span>
-              ) : (
-                <button
-                  className={styles.cardBtn}
-                  onClick={() => navigate(feature.link)}
-                >
-                  Try Now →
-                </button>
-              )}
+              <button
+                className={styles.cardBtn}
+                onClick={() => navigate(feature.link)}
+              >
+                Open Tool
+              </button>
             </div>
-          </div>
+          </article>
         ))}
       </div>
     </div>

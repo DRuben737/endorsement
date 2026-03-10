@@ -1,19 +1,27 @@
-// generate-sitemap.js
 const fs = require('fs');
-const { SitemapStream } = require('sitemap');
+const path = require('path');
+const routes = require('../src/routes');
 
-const sitemap = new SitemapStream({ hostname: 'https://www.pilotseal.com' });
+const siteRoot = 'https://www.pilotseal.com';
 
-const links = [
-  { url: '/', changefreq: 'monthly', priority: 1.0 },
-  { url: '/logbook', changefreq: 'monthly', priority: 0.8 },
-  { url: '/endorsement-generator', changefreq: 'monthly', priority: 0.8 },
-  { url: '/flight-brief', changefreq: 'monthly', priority: 0.8 }
-];
+const sitemapEntries = routes.map((route) => {
+  const loc = `${siteRoot}${route.path}`;
+  const changefreq = route.changefreq || 'monthly';
+  const priority = route.priority || '0.8';
 
-(async () => {
-  const writeStream = fs.createWriteStream('./public/sitemap.xml');
-  sitemap.pipe(writeStream);
-  links.forEach(link => sitemap.write(link));
-  sitemap.end();
-})();
+  return `  <url>
+    <loc>${loc}</loc>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`;
+});
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapEntries.join('\n')}
+</urlset>`;
+
+const outputPath = path.resolve(__dirname, '../public/sitemap.xml');
+fs.writeFileSync(outputPath, sitemap, 'utf-8');
+
+console.log(`Sitemap generated: ${outputPath}`);

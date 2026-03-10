@@ -1,15 +1,18 @@
 import React from 'react';
+import './MainLayout.css';
 
 import Header from './Header';
 import Footer from './Footer';
+import SiteNotificationBar from './SiteNotificationBar';
 
 const MainLayout = ({ children }) => {
   return (
-    <div className="app-layout">
-      <div className="background"></div>
+    <div className="mainLayoutShell">
+      <div className="appBackground"></div>
       <Header />
-      <main className="content-wrapper" style={{ flex: 1, padding: '20px', minHeight: '70vh' }}>
-        {children}
+      <SiteNotificationBar />
+      <main className="contentWrapper">
+        <div className="contentSurface">{children}</div>
       </main>
       <Footer />
     </div>

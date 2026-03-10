@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
 import './header.css';
+import routes from '../../routes';
+
+const navItems = routes.filter((route) => route.showInNav);
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-
   const navRef = useRef(null);
-
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -20,8 +18,6 @@ function Header() {
 
     if (menuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
@@ -32,20 +28,34 @@ function Header() {
   return (
     <header className="app-header">
       <div className="header-left">
-        <img src="/images/logo.png" alt="Logo" className="logo" />
-        <h1 className="site-title">
+        <img src="/images/logo.png" alt="PilotSeal Tools logo" className="logo" />
+        <p className="site-title">
           <Link to="/" className="title-link">PilotSeal Tools</Link>
-        </h1>
+        </p>
       </div>
-      <button className="menu-toggle" onClick={toggleMenu}>☰</button>
+
+      <button
+        className="menu-toggle"
+        onClick={() => setMenuOpen((open) => !open)}
+        aria-expanded={menuOpen}
+        aria-controls="primary-navigation"
+        aria-label="Toggle navigation"
+      >
+        ☰
+      </button>
+
       <div className="header-right" ref={navRef}>
-        <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
-          <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
-          <Link to="/decoder" onClick={() => setMenuOpen(false)}>Decoder</Link>
-          <Link to="/endorsement-generator" onClick={() => setMenuOpen(false)}>Endorsement</Link>
-          <Link to="/wb" onClick={() => setMenuOpen(false)}>W&B</Link>
-          <Link to="/flight-brief" onClick={() => setMenuOpen(false)}>Brief</Link>
-          <Link to="/nighttime" onClick={() => setMenuOpen(false)}>Night</Link>
+        <nav id="primary-navigation" className={`nav-links ${menuOpen ? 'open' : ''}`}>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => (isActive ? 'active' : '')}
+              onClick={() => setMenuOpen(false)}
+            >
+              {item.navLabel || item.label}
+            </NavLink>
+          ))}
         </nav>
       </div>
     </header>

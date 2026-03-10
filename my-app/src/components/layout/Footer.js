@@ -1,23 +1,23 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './footer.css';
 
 function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="footer">
       <div className="footer-container">
         <div className="footer-content">
           <div className="footer-links">
-            <a href="/home">Home</a>
-            <span className="divider">|</span>
+            <Link to="/home">Home</Link>
             <a href="https://ruben.pilotseal.com" target="_blank" rel="noopener noreferrer">Blog</a>
-            <span className="divider">|</span>
-            <a href="/about">About</a>
-            <span className="divider">|</span>
-            <a href="/privacy">Privacy Policy</a>
+            <Link to="/about">About</Link>
+            <Link to="/privacy">Privacy Policy</Link>
           </div>
           <div className="footer-meta">
-            <p>© 2025 Pilot Seal. All rights reserved.</p>
-            <p>Copyright © Deshuai Ren. Built with <span className="heart">❤️</span> and React.</p>
+            <p>© {currentYear} PilotSeal Tools. Flight planning utilities for instructors and students.</p>
+            <p>Verify all operational, regulatory, and endorsement content against current FAA references before use.</p>
           </div>
         </div>
       </div>

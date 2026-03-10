@@ -1,8 +1,10 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../css/FlightBrief.css";
 
 /** ------------------ constants ------------------ */
 const API_BASE = "https://brief.r1978244759.workers.dev";
+const FLIGHT_BRIEF_DRAFT_KEY = "pilotseal.flightBriefDraft";
+const FLIGHT_BRIEF_PROFILE_KEY = "pilotseal.flightBriefProfile";
 
 /** ------------------ utils (pure functions) ------------------ */
 function normalizeICAO(s) {
@@ -163,6 +165,28 @@ function nmsNotamsUrl(airports) {
   return `${API_BASE}/notams?airports=${qs}`;
 }
 
+function loadStorageItem(key, fallback) {
+  if (typeof window === "undefined") return fallback;
+
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (error) {
+    console.error(`Failed to load ${key}:`, error);
+    return fallback;
+  }
+}
+
+function saveStorageItem(key, value) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Failed to save ${key}:`, error);
+  }
+}
+
 /** ------------------ Component ------------------ */
 export default function FlightBrief() {
   /** ---- core form ---- */
@@ -265,6 +289,9 @@ export default function FlightBrief() {
   const [imsafe, setImsafe] = useState(0); // 0..6
   const [otherRisks, setOtherRisks] = useState(0); // 0..5
   const [riskComments, setRiskComments] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+  const [draftStatus, setDraftStatus] = useState("Draft autosaves on this device.");
+  const [profileStatus, setProfileStatus] = useState("Common fields can be reused on this device.");
 
   const staticScore = useMemo(
     () => sumChecked(STATIC_RISKS, staticChecked) + (parseInt(imsafe, 10) || 0),
@@ -707,117 +734,364 @@ ${riskComments}
     return [...ordered, ...extras];
   }, [notamByIcao, airportsForWxAndNotams]);
 
+  const steps = [
+    { id: "overview", title: "Flight Info", description: "Crew, timing, aircraft, and fuel." },
+    { id: "route", title: "Route", description: "Departure, route type, stops, and lesson plan." },
+    { id: "weather", title: "Weather", description: "METAR, TAF, AIRMET/SIGMET, DA, and NOTAMs." },
+    { id: "aircraft", title: "Aircraft", description: "Weight, limits, and maintenance status." },
+    { id: "risk", title: "Risk", description: "Risk scoring, gates, discussion, and final report." },
+  ];
+
+  const isFirstStep = currentStep === 0;
+  const isLastStep = currentStep === steps.length - 1;
+
+  const draftPayload = useMemo(
+    () => ({
+      studentName,
+      instructorName,
+      flightRules,
+      flightDate,
+      etd,
+      eta,
+      aircraftId,
+      fuel,
+      fuelTime,
+      routeMode,
+      departure,
+      arrival,
+      stops,
+      lessonPractice,
+      fieldElevation,
+      outsideTemp,
+      weatherNotes,
+      grossWeight,
+      withinLimitsConfirmed,
+      mxNow,
+      mxDue,
+      staticChecked,
+      dynamicChecked,
+      imsafe,
+      otherRisks,
+      riskComments,
+      currentStep,
+    }),
+    [
+      studentName,
+      instructorName,
+      flightRules,
+      flightDate,
+      etd,
+      eta,
+      aircraftId,
+      fuel,
+      fuelTime,
+      routeMode,
+      departure,
+      arrival,
+      stops,
+      lessonPractice,
+      fieldElevation,
+      outsideTemp,
+      weatherNotes,
+      grossWeight,
+      withinLimitsConfirmed,
+      mxNow,
+      mxDue,
+      staticChecked,
+      dynamicChecked,
+      imsafe,
+      otherRisks,
+      riskComments,
+      currentStep,
+    ]
+  );
+
+  const profilePayload = useMemo(
+    () => ({
+      instructorName,
+      aircraftId,
+      fuel,
+      fuelTime,
+      routeMode,
+      departure,
+      arrival: routeMode === "local" ? departure : arrival,
+      fieldElevation,
+      mxNow,
+      mxDue,
+    }),
+    [instructorName, aircraftId, fuel, fuelTime, routeMode, departure, arrival, fieldElevation, mxNow, mxDue]
+  );
+
+  useEffect(() => {
+    const savedDraft = loadStorageItem(FLIGHT_BRIEF_DRAFT_KEY, null);
+    const savedProfile = loadStorageItem(FLIGHT_BRIEF_PROFILE_KEY, null);
+
+    if (savedDraft) {
+      setStudentName(savedDraft.studentName || "");
+      setInstructorName(savedDraft.instructorName || "");
+      setFlightRules(savedDraft.flightRules || "VFR");
+      setFlightDate(savedDraft.flightDate || "");
+      setEtd(savedDraft.etd || "");
+      setEta(savedDraft.eta || "");
+      setAircraftId(savedDraft.aircraftId || "");
+      setFuel(savedDraft.fuel || "");
+      setFuelTime(savedDraft.fuelTime || "");
+      setRouteMode(savedDraft.routeMode || "local");
+      setDeparture(savedDraft.departure || "");
+      setArrival(savedDraft.arrival || "");
+      setStops(Array.isArray(savedDraft.stops) && savedDraft.stops.length ? savedDraft.stops : [""]);
+      setLessonPractice(savedDraft.lessonPractice || "");
+      setFieldElevation(savedDraft.fieldElevation || "");
+      setOutsideTemp(savedDraft.outsideTemp || "");
+      setWeatherNotes(savedDraft.weatherNotes || "");
+      setGrossWeight(savedDraft.grossWeight || "");
+      setWithinLimitsConfirmed(!!savedDraft.withinLimitsConfirmed);
+      setMxNow(savedDraft.mxNow || "");
+      setMxDue(savedDraft.mxDue || "");
+      setStaticChecked(savedDraft.staticChecked || {});
+      setDynamicChecked(savedDraft.dynamicChecked || {});
+      setImsafe(savedDraft.imsafe || 0);
+      setOtherRisks(savedDraft.otherRisks || 0);
+      setRiskComments(savedDraft.riskComments || "");
+      setCurrentStep(savedDraft.currentStep || 0);
+      setDraftStatus("Recovered your last draft on this device.");
+      return;
+    }
+
+    if (savedProfile) {
+      setInstructorName(savedProfile.instructorName || "");
+      setAircraftId(savedProfile.aircraftId || "");
+      setFuel(savedProfile.fuel || "");
+      setFuelTime(savedProfile.fuelTime || "");
+      setRouteMode(savedProfile.routeMode || "local");
+      setDeparture(savedProfile.departure || "");
+      setArrival(savedProfile.arrival || "");
+      setFieldElevation(savedProfile.fieldElevation || "");
+      setMxNow(savedProfile.mxNow || "");
+      setMxDue(savedProfile.mxDue || "");
+      setDraftStatus("Loaded your saved common flight info.");
+    }
+  }, []);
+
+  useEffect(() => {
+    saveStorageItem(FLIGHT_BRIEF_DRAFT_KEY, {
+      ...draftPayload,
+      updatedAt: new Date().toISOString(),
+    });
+    setDraftStatus("Draft autosaved on this device.");
+  }, [draftPayload]);
+
+  useEffect(() => {
+    saveStorageItem(FLIGHT_BRIEF_PROFILE_KEY, {
+      ...profilePayload,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [profilePayload]);
+
+  const goToNextStep = () => {
+    setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
+  };
+
+  const goToPreviousStep = () => {
+    setCurrentStep((step) => Math.max(step - 1, 0));
+  };
+
+  const clearDraft = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(FLIGHT_BRIEF_DRAFT_KEY);
+    }
+    setDraftStatus("Draft cleared. Current fields remain until you refresh or change them.");
+  };
+
+  const loadSavedProfile = () => {
+    const savedProfile = loadStorageItem(FLIGHT_BRIEF_PROFILE_KEY, null);
+    if (!savedProfile) {
+      setProfileStatus("No saved common info found on this device.");
+      return;
+    }
+
+    setInstructorName(savedProfile.instructorName || "");
+    setAircraftId(savedProfile.aircraftId || "");
+    setFuel(savedProfile.fuel || "");
+    setFuelTime(savedProfile.fuelTime || "");
+    setRouteMode(savedProfile.routeMode || "local");
+    setDeparture(savedProfile.departure || "");
+    setArrival(savedProfile.arrival || "");
+    setFieldElevation(savedProfile.fieldElevation || "");
+    setMxNow(savedProfile.mxNow || "");
+    setMxDue(savedProfile.mxDue || "");
+    setProfileStatus("Saved common info applied to the form.");
+  };
+
+  const clearSavedProfile = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(FLIGHT_BRIEF_PROFILE_KEY);
+    }
+    setProfileStatus("Saved common info cleared from this device.");
+  };
+
   return (
     <div className="flightbrief-body">
       <div className="flight-section">
-        <h1 className="text-3xl font-bold text-center mb-6">✈️ Flight Brief</h1>
-        <hr className="dived-line" />
+        <div className="flightbrief-header">
+          <div>
+            <h1 className="text-3xl font-bold text-center mb-6">Flight Brief</h1>
+            <p className="flightbrief-subtitle">Move step by step, fill each section, then generate the final brief.</p>
+            <div className="flightbrief-statusStack">
+              <span>{draftStatus}</span>
+              <span>{profileStatus}</span>
+            </div>
+          </div>
+          <div className="flightbrief-stepBadge">
+            Step {currentStep + 1} of {steps.length}
+          </div>
+        </div>
 
-        <h2 className="text-xl font-bold mb-4">📓Information</h2>
+        <div className="flightbrief-stepper" role="tablist" aria-label="Flight brief steps">
+          {steps.map((step, index) => (
+            <button
+              key={step.id}
+              type="button"
+              className={`flightbrief-step ${index === currentStep ? "active" : ""} ${index < currentStep ? "completed" : ""}`}
+              onClick={() => setCurrentStep(index)}
+            >
+              <span className="flightbrief-stepIndex">{index + 1}</span>
+              <span>
+                <strong>{step.title}</strong>
+                <small>{step.description}</small>
+              </span>
+            </button>
+          ))}
+        </div>
 
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-          <div className="inline-label-input">
-            <label className="label" htmlFor="studentName">Student Name(Pilot Flying):</label>
-            <input type="text" id="studentName" className="input-field" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
-          </div>
+          {currentStep === 0 && (
+            <section className="flightbrief-panel">
+              <h2 className="text-xl font-bold mb-4">Flight Information</h2>
 
-          <div className="inline-label-input">
-            <label className="label" htmlFor="instructorName">Instructor Name(Pilot In Command):</label>
-            <input type="text" id="instructorName" className="input-field" value={instructorName} onChange={(e) => setInstructorName(e.target.value)} required />
-          </div>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="flight-rules">Flight Rules:</label>
-            <select id="flight-rules" className="input-field" value={flightRules} onChange={(e) => setFlightRules(e.target.value)} title="Select flight rules">
-              <option value="VFR">VFR</option>
-              <option value="IFR">IFR</option>
-            </select>
-          </div>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="flightDate">Select Date</label>
-            <input type="date" id="flightDate" className="input-field" value={flightDate} onChange={(e) => setFlightDate(e.target.value)} required title="Select date" lang="en" />
-          </div>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="etd">Estimated Time of Departure (ETD)</label>
-            <input type="time" id="etd" className="input-field" value={etd} onChange={(e) => setEtd(e.target.value)} required />
-          </div>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="eta">Estimated Time of Arrival (ETA)</label>
-            <input type="time" id="eta" className="input-field" value={eta} onChange={(e) => setEta(e.target.value)} required />
-          </div>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="ete">Estimated Time Enroute (ETE)</label>
-            <input type="text" id="ete" className="input-field" readOnly value={ete} placeholder="Auto-calculated" />
-          </div>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="aircraftId">Aircraft Tail Number:</label>
-            <input type="text" id="aircraftId" className="input-field" value={aircraftId} onChange={(e) => setAircraftId(e.target.value)} required />
-          </div>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="fuel">Fuel Onboard (Gallons):</label>
-            <input type="number" id="fuel" className="input-field" value={fuel} onChange={(e) => setFuel(e.target.value)} required />
-          </div>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="fuelTime">Fuel Time (hrs):</label>
-            <input type="number" id="fuelTime" className="input-field" value={fuelTime} onChange={(e) => setFuelTime(e.target.value)} placeholder="e.g. 2.5" />
-          </div>
-
-          <hr className="dived-line" />
-
-          <h2 className="text-xl font-bold mb-4">🛫 Route</h2>
-
-          <div className="inline-label-input">
-            <label className="label" htmlFor="departure">Departure Point:</label>
-            <input type="text" id="departure" className="input-field" value={departure} onChange={(e) => onSetDeparture(e.target.value)} required />
-          </div>
-
-          <div className="flex items-center gap-4 mt-4">
-            <button type="button" className={`btn-toggle ${routeMode === "cross" ? "active" : ""}`} onClick={onSelectCross}>
-              Cross Country
-            </button>
-            <button type="button" className={`btn-toggle ${routeMode === "local" ? "active" : ""}`} onClick={onSelectLocal}>
-              Local Practice
-            </button>
-          </div>
-
-          {routeMode === "cross" && (
-            <div className="space-y-3 mt-4">
-              <label className="label">Intermediate Stop</label>
-
-              {stops.map((s, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <input type="text" className="stop-input input-field" value={s} onChange={(e) => updateStop(idx, e.target.value)} placeholder="e.g. KSQL" />
-                  <button type="button" className="remove-stop text-red-500 font-bold" onClick={() => removeStop(idx)} aria-label="Remove stop" title="Remove stop">✕</button>
+              <div className="flightbrief-memoryCard">
+                <div>
+                  <strong>Device memory</strong>
+                  <p>Draft saves automatically. Common flight info is also remembered for reuse on this device.</p>
                 </div>
-              ))}
+                <div className="flightbrief-memoryActions">
+                  <button type="button" className="flightbrief-memoryButton secondary" onClick={loadSavedProfile}>
+                    Load saved info
+                  </button>
+                  <button type="button" className="flightbrief-memoryButton secondary" onClick={clearDraft}>
+                    Clear draft
+                  </button>
+                  <button type="button" className="flightbrief-memoryButton danger" onClick={clearSavedProfile}>
+                    Clear saved info
+                  </button>
+                </div>
+              </div>
 
-              <button type="button" id="addStop" className="text-blue-600 underline text-sm" onClick={addStop}>+ Add Another Stop</button>
-            </div>
+              <div className="inline-label-input">
+                <label className="label" htmlFor="studentName">Student Name(Pilot Flying):</label>
+                <input type="text" id="studentName" className="input-field" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="instructorName">Instructor Name(Pilot In Command):</label>
+                <input type="text" id="instructorName" className="input-field" value={instructorName} onChange={(e) => setInstructorName(e.target.value)} required />
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="flight-rules">Flight Rules:</label>
+                <select id="flight-rules" className="input-field" value={flightRules} onChange={(e) => setFlightRules(e.target.value)} title="Select flight rules">
+                  <option value="VFR">VFR</option>
+                  <option value="IFR">IFR</option>
+                </select>
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="flightDate">Select Date</label>
+                <input type="date" id="flightDate" className="input-field" value={flightDate} onChange={(e) => setFlightDate(e.target.value)} required title="Select date" lang="en" />
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="etd">Estimated Time of Departure (ETD)</label>
+                <input type="time" id="etd" className="input-field" value={etd} onChange={(e) => setEtd(e.target.value)} required />
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="eta">Estimated Time of Arrival (ETA)</label>
+                <input type="time" id="eta" className="input-field" value={eta} onChange={(e) => setEta(e.target.value)} required />
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="ete">Estimated Time Enroute (ETE)</label>
+                <input type="text" id="ete" className="input-field" readOnly value={ete} placeholder="Auto-calculated" />
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="aircraftId">Aircraft Tail Number:</label>
+                <input type="text" id="aircraftId" className="input-field" value={aircraftId} onChange={(e) => setAircraftId(e.target.value)} required />
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="fuel">Fuel Onboard (Gallons):</label>
+                <input type="number" id="fuel" className="input-field" value={fuel} onChange={(e) => setFuel(e.target.value)} required />
+              </div>
+
+              <div className="inline-label-input">
+                <label className="label" htmlFor="fuelTime">Fuel Time (hrs):</label>
+                <input type="number" id="fuelTime" className="input-field" value={fuelTime} onChange={(e) => setFuelTime(e.target.value)} placeholder="e.g. 2.5" />
+              </div>
+            </section>
           )}
 
-          <div className="inline-label-input mt-4">
-            <label className="label" htmlFor="arrival">Arrival Point:</label>
-            <input type="text" id="arrival" className="input-field" value={arrival} onChange={(e) => setArrival(e.target.value)} required readOnly={routeMode === "local"} />
-          </div>
+          {currentStep === 1 && (
+            <section className="flightbrief-panel">
+              <h2 className="text-xl font-bold mb-4">Route & Lesson</h2>
 
-          <div className="section inline-label-input">
-            <label className="label" htmlFor="lessonPractice"><strong>✏️ Lesson Practice:</strong></label>
-            <input type="text" id="lessonPractice" className="input-field" value={lessonPractice} onChange={(e) => setLessonPractice(e.target.value)} placeholder="e.g., Steep Turns, Slow Flight, Short Field Landing" />
-          </div>
-        </form>
+              <div className="inline-label-input">
+                <label className="label" htmlFor="departure">Departure Point:</label>
+                <input type="text" id="departure" className="input-field" value={departure} onChange={(e) => onSetDeparture(e.target.value)} required />
+              </div>
 
-        <hr className="dived-line" />
+              <div className="flightbrief-toggleRow">
+                <button type="button" className={`btn-toggle ${routeMode === "cross" ? "active" : ""}`} onClick={onSelectCross}>
+                  Cross Country
+                </button>
+                <button type="button" className={`btn-toggle ${routeMode === "local" ? "active" : ""}`} onClick={onSelectLocal}>
+                  Local Practice
+                </button>
+              </div>
 
-        <h2 className="text-xl font-bold mb-4">🌦️ Weather Information</h2>
+              {routeMode === "cross" && (
+                <div className="space-y-3 mt-4">
+                  <label className="label">Intermediate Stop</label>
 
-        <div className="space-y-6">
+                  {stops.map((s, idx) => (
+                    <div key={idx} className="flightbrief-stopRow">
+                      <input type="text" className="stop-input input-field" value={s} onChange={(e) => updateStop(idx, e.target.value)} placeholder="e.g. KSQL" />
+                      <button type="button" className="remove-stop text-red-500 font-bold" onClick={() => removeStop(idx)} aria-label="Remove stop" title="Remove stop">Remove</button>
+                    </div>
+                  ))}
+
+                  <button type="button" id="addStop" className="flightbrief-inlineAction" onClick={addStop}>+ Add Another Stop</button>
+                </div>
+              )}
+
+              <div className="inline-label-input mt-4">
+                <label className="label" htmlFor="arrival">Arrival Point:</label>
+                <input type="text" id="arrival" className="input-field" value={arrival} onChange={(e) => setArrival(e.target.value)} required readOnly={routeMode === "local"} />
+              </div>
+
+              <div className="section inline-label-input">
+                <label className="label" htmlFor="lessonPractice"><strong>Lesson Practice:</strong></label>
+                <input type="text" id="lessonPractice" className="input-field" value={lessonPractice} onChange={(e) => setLessonPractice(e.target.value)} placeholder="e.g., Steep Turns, Slow Flight, Short Field Landing" />
+              </div>
+            </section>
+          )}
+
+          {currentStep === 2 && (
+            <section className="flightbrief-panel">
+              <h2 className="text-xl font-bold mb-4">Weather & NOTAMs</h2>
+
+              <div className="space-y-6">
           <div className="text-center" style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
             <button
               type="button"
@@ -938,8 +1212,8 @@ ${riskComments}
 <div className="mt-6">
   <h3 className="text-xl font-bold mb-3">📢 Smart NOTAMs</h3>
 
-  {renderedNotamAirports.length === 0 ? (
-    <div className="text-sm text-gray-500">No NOTAMs fetched yet. Click “Fetch NOTAMs”.</div>
+{renderedNotamAirports.length === 0 ? (
+    <div className="text-sm text-gray-500">No NOTAMs fetched yet. Click "Fetch NOTAMs".</div>
   ) : (
     renderedNotamAirports.map((icao) => {
       const groups = notamByIcao?.[icao] || { closures: [], nav: [], general: [] };
@@ -1087,25 +1361,26 @@ ${riskComments}
     })
   )}
 </div>
-        </div>
+                {/* Notes / NOTAMs free text */}
+                <div className="section inline-label-input">
+                  <label className="label" htmlFor="weatherNotes"><strong>Notes / NOTAMs</strong></label>
+                  <textarea
+                    id="weatherNotes"
+                    rows="3"
+                    className="input-field"
+                    value={weatherNotes}
+                    onChange={(e) => setWeatherNotes(e.target.value)}
+                    placeholder="Enter ATIS, personal notes, mitigation actions, etc..."
+                  />
+                </div>
+              </div>
+            </section>
+          )}
 
-        {/* Notes / NOTAMs free text */}
-        <div className="section inline-label-input">
-          <label className="label" htmlFor="weatherNotes"><strong>📝 Notes / NOTAMs</strong></label>
-          <textarea
-            id="weatherNotes"
-            rows="3"
-            className="input-field"
-            value={weatherNotes}
-            onChange={(e) => setWeatherNotes(e.target.value)}
-            placeholder="Enter ATIS, personal notes, mitigation actions, etc..."
-          />
-        </div>
-
-        <hr className="dived-line" />
-
-        <h2 className="text-xl font-bold mb-4">⚖️ Aircraft Conditions</h2>
-        <div className="space-y-4">
+          {currentStep === 3 && (
+            <section className="flightbrief-panel">
+              <h2 className="text-xl font-bold mb-4">Aircraft Conditions</h2>
+              <div className="space-y-4">
           <div className="inline-label-input">
             <label className="label" htmlFor="grossWeight">Total Gross Weight (lbs):</label>
             <input type="number" id="grossWeight" className="input-field" value={grossWeight} onChange={(e) => setGrossWeight(e.target.value)} placeholder="e.g. 2400" />
@@ -1136,14 +1411,16 @@ ${riskComments}
             <label className="label" htmlFor="mx-due">Next Mx Due:</label>
             <input type="number" id="mx-due" className="input-field" value={mxDue} onChange={(e) => setMxDue(e.target.value)} placeholder="Next 100 hr/annual eg." />
           </div>
-        </div>
+              </div>
+            </section>
+          )}
 
-        <hr className="dived-line" />
-
-        <h2>🧭 Risk Assessment</h2>
-        <div className="risk-columns">
+          {currentStep === 4 && (
+            <section className="flightbrief-panel">
+              <h2>Risk Assessment</h2>
+              <div className="risk-columns">
           <div className="static-risk-column">
-            <h3>🪨 Static Risk</h3>
+            <h3>Static Risk</h3>
             {STATIC_RISKS.map((r) => (
               <div className="risk-item" key={r.id}>
                 <label htmlFor={r.id}>{r.label}:</label>
@@ -1162,7 +1439,7 @@ ${riskComments}
           </div>
 
           <div className="dynamic-risk-column">
-            <h3>🌪️ Dynamic Risk</h3>
+            <h3>Dynamic Risk</h3>
             {DYNAMIC_RISKS.map((r) => (
               <div className="risk-item" key={r.id}>
                 <label htmlFor={r.id}>{r.label}:</label>
@@ -1182,7 +1459,7 @@ ${riskComments}
         </div>
 
         <div className="section inline-label-input">
-          <label className="label" htmlFor="riskComments"><strong>🗒️ Risk Discussion / Comments</strong></label>
+          <label className="label" htmlFor="riskComments"><strong>Risk Discussion / Comments</strong></label>
           <textarea id="riskComments" rows="3" className="input-field" value={riskComments} onChange={(e) => setRiskComments(e.target.value)} placeholder="Notes from discussion with senior/chief pilot..." />
         </div>
 
@@ -1212,9 +1489,27 @@ ${riskComments}
             </ul>
           </div>
         )}
+            </section>
+          )}
+        </form>
 
-        <div style={{ textAlign: "center", marginTop: "2rem" }}>
-          <button type="button" onClick={generateReport}>Generate Flight Brief Report</button>
+        <div className="flightbrief-nav">
+          <button type="button" className="flightbrief-navButton secondary" onClick={goToPreviousStep} disabled={isFirstStep}>
+            Previous
+          </button>
+          <div className="flightbrief-navMeta">
+            <strong>{steps[currentStep].title}</strong>
+            <span>{steps[currentStep].description}</span>
+          </div>
+          {isLastStep ? (
+            <button type="button" className="flightbrief-navButton primary" onClick={generateReport}>
+              Generate Flight Brief Report
+            </button>
+          ) : (
+            <button type="button" className="flightbrief-navButton primary" onClick={goToNextStep}>
+              Next
+            </button>
+          )}
         </div>
       </div>
     </div>

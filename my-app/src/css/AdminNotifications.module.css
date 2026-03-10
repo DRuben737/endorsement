@@ -1,0 +1,167 @@
+.page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.header p {
+  margin: 0.4rem 0 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.hint {
+  max-width: 360px;
+  font-size: 0.9rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  padding: 1.25rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+}
+
+.card h2,
+.savedMeta h3 {
+  margin: 0 0 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.field span {
+  font-weight: 600;
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem;
+  background: #fff;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 600;
+  padding-bottom: 0.8rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.primaryButton,
+.secondaryButton {
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.2rem;
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, #0f766e, #0f4c81);
+  color: #fff;
+}
+
+.secondaryButton {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.status {
+  margin: 1rem 0 0;
+  color: #0f4c81;
+}
+
+.preview {
+  border-radius: 18px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.preview strong,
+.preview p,
+.preview span {
+  margin: 0;
+}
+
+.info {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.warning {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.success {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.savedMeta {
+  margin-top: 1.25rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.savedMeta p,
+.empty {
+  margin: 0.4rem 0 0;
+  color: #475569;
+}
+
+@media (max-width: 900px) {
+  .header,
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

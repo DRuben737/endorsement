@@ -1,313 +1,276 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Modal from 'react-modal';
-import templates from '../templates';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import '../css/EndorsementGenerator.css';
-import styles from '../css/EndorsementGenerator.module.css'; // CSS module
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { Helmet } from 'react-helmet-async';
+import templates from '../templates';
+import '../css/EndorsementGenerator.css';
+import styles from '../css/EndorsementGenerator.module.css';
 
-function EndorsementGenerator() {
-  const [formData, setFormData] = useState({
-    instructorName: '',
-    instructorCertNumber: '',
-    instructorCertExpDate: '',
-    studentName: '',
-    studentCertNumber: '',
-    date: '',
+const FIELD_CONFIG = [
+  { key: 'instructorName', label: 'Instructor name', type: 'text', required: true, autoComplete: 'name' },
+  { key: 'instructorCertNumber', label: 'Instructor certificate number', type: 'text', required: true, autoComplete: 'off' },
+  { key: 'instructorCertExpDate', label: 'Instructor certificate expiration *', type: 'text', required: true, autoComplete: 'off', placeholder: 'MM/YYYY', inputMode: 'numeric', maxLength: 7 },
+  { key: 'studentName', label: 'Student name', type: 'text', required: true, autoComplete: 'name' },
+  { key: 'studentCertNumber', label: 'Student certificate number', type: 'text', required: false, autoComplete: 'off' },
+  { key: 'date', label: 'Endorsement date', type: 'text', required: true, autoComplete: 'off', placeholder: 'MM/DD/YYYY', inputMode: 'numeric', maxLength: 10 },
+];
+
+const INITIAL_FORM_DATA = {
+  instructorName: '',
+  instructorCertNumber: '',
+  instructorCertExpDate: '',
+  studentName: '',
+  studentCertNumber: '',
+  date: '',
+};
+
+const templateEntries = Object.entries(templates);
+
+function sanitizeText(text) {
+  return text.replace(/\t/g, ' ').replace(/[\u{0080}-\u{FFFF}]/gu, '');
+}
+
+function formatDateForPdf(value) {
+  if (!value) {
+    return '';
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-');
+    return `${month}/${day}/${year}`;
+  }
+
+  return value;
+}
+
+function formatInputValue(field, value) {
+  if (field === 'instructorCertExpDate') {
+    const digits = value.replace(/\D/g, '').slice(0, 6);
+    if (digits.length <= 2) {
+      return digits;
+    }
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+
+  if (field === 'date') {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 2) {
+      return digits;
+    }
+    if (digits.length <= 4) {
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  }
+
+  return value;
+}
+
+function splitTextIntoLines(text, font, fontSize, maxWidth) {
+  const paragraphs = text.split('\n');
+  const lines = [];
+
+  paragraphs.forEach((paragraph) => {
+    const words = paragraph.trim().split(/\s+/).filter(Boolean);
+    let currentLine = '';
+
+    if (words.length === 0) {
+      lines.push('');
+      return;
+    }
+
+    words.forEach((word) => {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+      if (testWidth <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          lines.push(currentLine);
+        }
+        currentLine = word;
+      }
+    });
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    lines.push('');
   });
 
+  return lines.at(-1) === '' ? lines.slice(0, -1) : lines;
+}
+
+function getTemplateCategory(title) {
+  if (/cross-country/i.test(title)) {
+    return 'Cross-country';
+  }
+  if (/solo/i.test(title)) {
+    return 'Solo';
+  }
+  if (/CFI|flight instructor|spin|FOI|CFII/i.test(title)) {
+    return 'Instructor';
+  }
+  if (/helicopter|R-22|R-44|autorotation/i.test(title)) {
+    return 'Rotorcraft';
+  }
+  if (/review|check|proficiency|practical test|written|knowledge/i.test(title)) {
+    return 'Review/Test';
+  }
+  return 'General';
+}
+
+function buildPreviewText(body) {
+  return body.replace(/\s+/g, ' ').replace(/\{[^}]+\}/g, '_____').trim();
+}
+
+function EndorsementGenerator() {
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+  const [errors, setErrors] = useState({});
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState('');
   const [selectedTemplates, setSelectedTemplates] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusMessage, setStatusMessage] = useState('Fill the form, select endorsements, and generate a PDF packet.');
 
   const canvasRef = useRef(null);
-
-  const handleClearSelection = () => {
-    setSelectedTemplates([]);
-  };
+  const signatureDirtyRef = useRef(false);
+  const pdfUrlRef = useRef('');
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      return undefined;
+    }
 
-    const ctx = canvas.getContext('2d');
+    const context = canvas.getContext('2d');
     const ratio = window.devicePixelRatio || 1;
+    const width = canvas.offsetWidth;
+    const height = canvas.offsetHeight;
 
-    canvas.width = canvas.offsetWidth * ratio;
-    canvas.height = canvas.offsetHeight * ratio;
-    canvas.style.width = canvas.offsetWidth + 'px';
-    canvas.style.height = canvas.offsetHeight + 'px';
-
-    ctx.scale(ratio, ratio);
-    ctx.lineWidth = 3.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#000';
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    context.scale(ratio, ratio);
+    context.lineWidth = 2.6;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.strokeStyle = '#0f172a';
 
     let drawing = false;
 
-    const getOffset = (e) => {
+    const getPoint = (event) => {
       const rect = canvas.getBoundingClientRect();
-      if (e.touches && e.touches.length > 0) {
-        return {
-          x: e.touches[0].clientX - rect.left,
-          y: e.touches[0].clientY - rect.top,
-        };
-      }
       return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
       };
     };
 
-    const startDraw = (e) => {
-      e.preventDefault();
+    const handlePointerDown = (event) => {
       drawing = true;
-      const { x, y } = getOffset(e);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
+      const { x, y } = getPoint(event);
+      context.beginPath();
+      context.moveTo(x, y);
     };
 
-    const draw = (e) => {
-      if (!drawing) return;
-      e.preventDefault();
-      const { x, y } = getOffset(e);
-      ctx.lineTo(x, y);
-      ctx.stroke();
+    const handlePointerMove = (event) => {
+      if (!drawing) {
+        return;
+      }
+
+      const { x, y } = getPoint(event);
+      signatureDirtyRef.current = true;
+      context.lineTo(x, y);
+      context.stroke();
     };
 
-    const endDraw = (e) => {
-      e.preventDefault();
+    const handlePointerUp = () => {
+      if (!drawing) {
+        return;
+      }
+
       drawing = false;
-      ctx.closePath();
+      context.closePath();
     };
 
-    // Mouse events
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', endDraw);
-    canvas.addEventListener('mouseleave', endDraw);
-
-    // Touch events
-    canvas.addEventListener('touchstart', startDraw, { passive: false });
-    canvas.addEventListener('touchmove', draw, { passive: false });
-    canvas.addEventListener('touchend', endDraw, { passive: false });
-    canvas.addEventListener('touchcancel', endDraw, { passive: false });
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointerleave', handlePointerUp);
 
     return () => {
-      canvas.removeEventListener('mousedown', startDraw);
-      canvas.removeEventListener('mousemove', draw);
-      canvas.removeEventListener('mouseup', endDraw);
-      canvas.removeEventListener('mouseleave', endDraw);
-
-      canvas.removeEventListener('touchstart', startDraw);
-      canvas.removeEventListener('touchmove', draw);
-      canvas.removeEventListener('touchend', endDraw);
-      canvas.removeEventListener('touchcancel', endDraw);
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
+      canvas.removeEventListener('pointerleave', handlePointerUp);
     };
   }, []);
 
-  const sanitizeText = (text) => {
-    // Replace tabs with spaces and remove non-standard characters
-    return text.replace(/\t/g, ' ').replace(/[\u{0080}-\u{FFFF}]/gu, '');
-  };
+  useEffect(() => {
+    return () => {
+      if (pdfUrlRef.current) {
+        URL.revokeObjectURL(pdfUrlRef.current);
+      }
+    };
+  }, []);
 
-  const splitTextIntoLines = (text, font, fontSize, maxWidth) => {
-    const paragraphs = text.split('\n');
-    const lines = [];
-
-    paragraphs.forEach((paragraph) => {
-      const words = paragraph.split(' ');
-      let currentLine = '';
-
-      words.forEach((word) => {
-        const testLine = currentLine + (currentLine ? ' ' : '') + word;
-        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
-
-        if (testWidth <= maxWidth) {
-          currentLine = testLine;
-        } else {
-          lines.push(currentLine);
-          currentLine = word;
-        }
-      });
-
-      if (currentLine) lines.push(currentLine);
-      lines.push(''); // empty line between paragraphs
-    });
-
-    return lines;
-  };
-
-  const handleGeneratePDF = async () => {
-    if (selectedTemplates.length === 0) {
-      alert('Please select at least one template before generating the PDF.');
-      return;
-    }
-
-    const {
-      instructorName,
-      instructorCertNumber,
-      instructorCertExpDate,
-      studentName,
-      studentCertNumber,
-      date,
-    } = formData;
-
-    const userConfirmed = window.confirm(
-      `Please verify the information before generating the PDF:\n` +
-        `Instructor Name: ${instructorName}\n` +
-        `Instructor Cert Number: ${instructorCertNumber}\n` +
-        `Instructor Cert Exp Date: ${instructorCertExpDate}\n` +
-        `Student Name: ${studentName}\n` +
-        `Student Cert Number: ${studentCertNumber}\n` +
-        `Date: ${date}`
-    );
-
-    if (!userConfirmed) return;
-
-    try {
-      const doc = await PDFDocument.create();
-      let page = doc.addPage([612, 792]); // 8.5 x 11 inches
-      const { height } = page.getSize();
-
-      const font = await doc.embedFont(StandardFonts.Helvetica);
-      const fontSize = 7;
-      const margin = 30;
-      const maxWidth = 270;
-      const boxWidth = 280;
-      const boxPadding = 5;
-
-      // Embed signature image from canvas
-      const canvas = canvasRef.current;
-      const dataUrl = canvas.toDataURL('image/png');
-      const signatureImageBytes = await fetch(dataUrl).then((res) => res.arrayBuffer());
-      const signatureImage = await doc.embedPng(signatureImageBytes);
-      const signatureDims = signatureImage.scale(0.5);
-
-      // 2-column layout
-      let x = margin;
-      let y = height - margin;
-      const columns = 2;
-      const boxSpacingX = 20;
-      const boxSpacingY = 20;
-      let col = 0;
-
-      for (const templateKey of selectedTemplates) {
-        let content = templates[templateKey];
-
-        content = content
-          .replace(/{studentName}/g, studentName)
-          .replace(/{studentCertNumber}/g, studentCertNumber)
-          .replace(/{date}/g, date)
-          .replace(/{instructorName}/g, instructorName)
-          .replace(/{instructorCertNumber}/g, instructorCertNumber)
-          .replace(/{instructorCertExpDate}/g, instructorCertExpDate);
-
-        content = sanitizeText(content);
-
-        const lines = splitTextIntoLines(content, font, fontSize, maxWidth);
-        const lineHeight = 1.15 * fontSize;
-        const textHeight = lines.length * lineHeight;
-        const boxHeight = textHeight + 2 * boxPadding;
-
-        // Center the two-column layout
-        const pageWidth = 612;
-        const totalBoxWidth = columns * boxWidth + (columns - 1) * boxSpacingX;
-        const horizontalOffset = (pageWidth - totalBoxWidth) / 2;
-
-        const willExceedPage = y - (boxHeight + boxSpacingY) < margin;
-        if (willExceedPage || col >= columns) {
-          page = doc.addPage([612, 792]);
-          y = height - margin; // (keep your original logic)
-          col = 0;
-        }
-
-        x = horizontalOffset + col * (boxWidth + boxSpacingX);
-
-        page.drawRectangle({
-          x: x - boxPadding,
-          y: y - boxHeight - boxPadding,
-          width: boxWidth,
-          height: boxHeight,
-          borderColor: rgb(0, 0, 0),
-          borderWidth: 1,
-        });
-
-        let textY = y;
-        for (let i = 0; i < lines.length; i++) {
-          page.drawText(lines[i], {
-            x,
-            y: textY - lineHeight,
-            size: fontSize,
-            font,
-          });
-          textY -= lineHeight;
-        }
-
-        const finalLineY = textY - lineHeight;
-
-        page.drawText('Signature:', {
-          x,
-          y: finalLineY,
-          size: fontSize,
-          font,
-        });
-
-        const scaledWidth = 50;
-        const scaledHeight = (signatureDims.height / signatureDims.width) * scaledWidth;
-
-        page.drawImage(signatureImage, {
-          x: x + 55,
-          y: finalLineY - 2,
-          width: scaledWidth,
-          height: scaledHeight,
-        });
-
-        col++;
-        if (col >= columns) {
-          col = 0;
-          y -= boxHeight + boxSpacingY;
-        }
+  const visibleTemplates = templateEntries
+    .map(([title, body]) => ({
+      title,
+      body,
+      category: getTemplateCategory(title),
+      preview: buildPreviewText(body),
+      selected: selectedTemplates.includes(title),
+    }))
+    .filter((template) => {
+      if (!searchTerm.trim()) {
+        return true;
       }
 
-      const pdfBytes = await doc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-      console.log('PDF generated successfully:', url);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
-    }
-  };
+      const query = searchTerm.trim().toLowerCase();
+      return (
+        template.title.toLowerCase().includes(query) ||
+        template.category.toLowerCase().includes(query) ||
+        template.preview.toLowerCase().includes(query)
+      );
+    })
+    .sort((left, right) => {
+      if (left.selected !== right.selected) {
+        return left.selected ? -1 : 1;
+      }
+      return left.title.localeCompare(right.title);
+    });
 
-  const handlePreview = () => {
-    if (!pdfUrl) {
-      alert('Please generate the PDF first.');
-      return;
-    }
-    const previewWindow = window.open(pdfUrl, '_blank');
-    if (!previewWindow) alert('Failed to open preview window.');
-  };
-
-  const handlePrint = () => {
-    if (!pdfUrl) {
-      alert('Please generate the PDF first.');
-      return;
-    }
-    const printWindow = window.open(pdfUrl, '_blank');
-    if (!printWindow) {
-      alert('Failed to open print window.');
-      return;
-    }
-    printWindow.onload = () => {
-      printWindow.print();
+  const selectedTemplateDetails = selectedTemplates.map((title) => {
+    const body = templates[title];
+    return {
+      title,
+      category: getTemplateCategory(title),
+      preview: buildPreviewText(body),
     };
+  });
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    signatureDirtyRef.current = false;
+    setStatusMessage('Signature cleared. PDF generation will leave the signature area blank.');
   };
 
   const openModal = () => setModalIsOpen(true);
   const closeModal = () => setModalIsOpen(false);
+
+  const handleChange = (field) => (event) => {
+    const nextValue = formatInputValue(field, event.target.value);
+    setFormData((prev) => ({ ...prev, [field]: nextValue }));
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
 
   const handleTemplateSelection = (templateKey) => {
     setSelectedTemplates((prevSelected) =>
@@ -315,22 +278,215 @@ function EndorsementGenerator() {
         ? prevSelected.filter((key) => key !== templateKey)
         : [...prevSelected, templateKey]
     );
+
+    setErrors((prev) => ({ ...prev, selectedTemplates: undefined }));
   };
 
-  const handleDeselectTemplate = (templateKey) => {
-    setSelectedTemplates((prev) => prev.filter((t) => t !== templateKey));
-  };
+  const validateForm = () => {
+    const nextErrors = {};
 
-  const handleConfirmSelection = () => {
+    FIELD_CONFIG.forEach((field) => {
+      if (field.required && !formData[field.key].trim()) {
+        nextErrors[field.key] = 'Required';
+      }
+    });
+
+    if (formData.instructorCertExpDate && !/^(0[1-9]|1[0-2])\/\d{4}$/.test(formData.instructorCertExpDate)) {
+      nextErrors.instructorCertExpDate = 'Use MM/YYYY';
+    }
+
+    if (formData.date && !/^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/.test(formData.date)) {
+      nextErrors.date = 'Use MM/DD/YYYY';
+    }
+
     if (selectedTemplates.length === 0) {
-      alert('Please select at least one template before confirming.');
+      nextErrors.selectedTemplates = 'Select at least one endorsement template.';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const createTemplateDraft = (templateKey) => {
+    const mappedData = {
+      studentName: formData.studentName.trim(),
+      studentCertNumber: formData.studentCertNumber.trim(),
+      date: formatDateForPdf(formData.date),
+      instructorName: formData.instructorName.trim(),
+      instructorCertNumber: formData.instructorCertNumber.trim(),
+      instructorCertExpDate: formatDateForPdf(formData.instructorCertExpDate),
+    };
+
+    return sanitizeText(
+      Object.entries(mappedData).reduce(
+        (content, [token, value]) => content.replaceAll(`{${token}}`, value),
+        templates[templateKey]
+      )
+    );
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!validateForm()) {
+      setStatusMessage('Resolve the highlighted fields before generating the PDF.');
       return;
     }
-    closeModal();
+
+    const confirmed = window.confirm(
+      `Generate ${selectedTemplates.length} endorsement draft(s) for ${formData.studentName.trim()} dated ${formatDateForPdf(formData.date)}?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const doc = await PDFDocument.create();
+      const font = await doc.embedFont(StandardFonts.Helvetica);
+      const fontSize = 7;
+      const lineHeight = fontSize * 1.2;
+      const pageWidth = 612;
+      const pageHeight = 792;
+      const margin = 32;
+      const columns = 2;
+      const boxWidth = 248;
+      const boxPadding = 7;
+      const boxSpacingX = 20;
+      const boxSpacingY = 22;
+      const textWidth = boxWidth - boxPadding * 2;
+      const rowWidth = columns * boxWidth + boxSpacingX;
+      const baseX = (pageWidth - rowWidth) / 2;
+
+      let signatureImage;
+
+      if (signatureDirtyRef.current) {
+        const dataUrl = canvasRef.current.toDataURL('image/png');
+        const signatureImageBytes = await fetch(dataUrl).then((response) => response.arrayBuffer());
+        signatureImage = await doc.embedPng(signatureImageBytes);
+      }
+
+      let page = doc.addPage([pageWidth, pageHeight]);
+      let y = pageHeight - margin;
+
+      for (let index = 0; index < selectedTemplates.length; index += columns) {
+        const rowTemplates = selectedTemplates.slice(index, index + columns).map((templateKey) => {
+          const content = createTemplateDraft(templateKey);
+          const lines = splitTextIntoLines(content, font, fontSize, textWidth);
+          const textHeight = lines.length * lineHeight;
+          const signatureHeight = signatureImage ? 30 : 14;
+          const boxHeight = textHeight + signatureHeight + boxPadding * 2 + 12;
+
+          return {
+            templateKey,
+            lines,
+            boxHeight,
+          };
+        });
+
+        const rowHeight = Math.max(...rowTemplates.map((template) => template.boxHeight));
+
+        if (y - rowHeight < margin) {
+          page = doc.addPage([pageWidth, pageHeight]);
+          y = pageHeight - margin;
+        }
+
+        for (let columnIndex = 0; columnIndex < rowTemplates.length; columnIndex += 1) {
+          const template = rowTemplates[columnIndex];
+          const x = baseX + columnIndex * (boxWidth + boxSpacingX);
+          const boxY = y - template.boxHeight;
+
+          page.drawRectangle({
+            x,
+            y: boxY,
+            width: boxWidth,
+            height: template.boxHeight,
+            borderColor: rgb(0.15, 0.23, 0.33),
+            borderWidth: 1,
+          });
+
+          let textY = y - boxPadding - lineHeight;
+          for (let lineIndex = 0; lineIndex < template.lines.length; lineIndex += 1) {
+            const line = template.lines[lineIndex];
+            page.drawText(line, {
+              x: x + boxPadding,
+              y: textY,
+              size: fontSize,
+              font,
+            });
+            textY -= lineHeight;
+          }
+
+          const signatureLabelY = boxY + boxPadding + (signatureImage ? 14 : 6);
+          page.drawText('Signature:', {
+            x: x + boxPadding,
+            y: signatureLabelY,
+            size: fontSize,
+            font,
+          });
+
+          if (signatureImage) {
+            page.drawImage(signatureImage, {
+              x: x + 56,
+              y: signatureLabelY - 5,
+              width: 54,
+              height: 22,
+            });
+          } else {
+            page.drawLine({
+              start: { x: x + 56, y: signatureLabelY + 2 },
+              end: { x: x + 130, y: signatureLabelY + 2 },
+              thickness: 0.8,
+              color: rgb(0.15, 0.23, 0.33),
+            });
+          }
+        }
+
+        y -= rowHeight + boxSpacingY;
+      }
+
+      const pdfBytes = await doc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const nextPdfUrl = URL.createObjectURL(blob);
+
+      if (pdfUrlRef.current) {
+        URL.revokeObjectURL(pdfUrlRef.current);
+      }
+
+      pdfUrlRef.current = nextPdfUrl;
+      setPdfUrl(nextPdfUrl);
+      setStatusMessage(`PDF ready. Generated ${selectedTemplates.length} endorsement draft(s).`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setStatusMessage('Failed to generate PDF. Check the console and try again.');
+    }
   };
 
-  const handleChange = (field) => (e) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+  const handlePreview = () => {
+    if (!pdfUrl) {
+      setStatusMessage('Generate the PDF before previewing it.');
+      return;
+    }
+
+    const previewWindow = window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+    if (!previewWindow) {
+      setStatusMessage('The preview window was blocked by the browser.');
+    }
+  };
+
+  const handlePrint = () => {
+    if (!pdfUrl) {
+      setStatusMessage('Generate the PDF before printing it.');
+      return;
+    }
+
+    const printWindow = window.open(pdfUrl, '_blank');
+    if (!printWindow) {
+      setStatusMessage('The print window was blocked by the browser.');
+      return;
+    }
+
+    printWindow.onload = () => {
+      printWindow.print();
+    };
   };
 
   return (
@@ -344,136 +500,209 @@ function EndorsementGenerator() {
         <link rel="canonical" href="https://tool.pilotseal.com/endorsement-generator" />
       </Helmet>
 
-  {/* SEO-only (visually hidden) */}
-  <h1 style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
-    FAA Endorsement Generator
-  </h1>
-  <p style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
-    Generate structured endorsement wording drafts aligned with FAR 61 concepts. Always verify against official FAA references.
-  </p>
+      <div className={styles.page}>
+        <section className={styles.utilityBar}>
+          <h1 className={styles.utilityTitle}>Endorsement Generator</h1>
+          <p className={styles.utilityNote}>
+            {selectedTemplates.length} selected. Verify wording against current FAA references before signing.
+          </p>
+        </section>
 
-      <div className={styles.inputSection}>
-        <input
-          type="text"
-          placeholder="Instructor Name"
-          value={formData.instructorName}
-          onChange={handleChange('instructorName')}
-        />
-        <input
-          type="text"
-          placeholder="Instructor Cert Number"
-          value={formData.instructorCertNumber}
-          onChange={handleChange('instructorCertNumber')}
-        />
-        <input
-          type="text"
-          placeholder="Instructor Cert Exp Date (MM/DD/YYYY)"
-          value={formData.instructorCertExpDate}
-          onChange={handleChange('instructorCertExpDate')}
-        />
-        <input
-          type="text"
-          placeholder="Student Name"
-          value={formData.studentName}
-          onChange={handleChange('studentName')}
-        />
-        <input
-          type="text"
-          placeholder="Student Cert Number (optional)"
-          value={formData.studentCertNumber}
-          onChange={handleChange('studentCertNumber')}
-        />
-        <input
-          type="text"
-          placeholder="Date (MM/DD/YYYY)"
-          value={formData.date}
-          onChange={handleChange('date')}
-        />
-      </div>
+        <div className={styles.workspace}>
+          <section className={styles.mainPanel}>
+            <div className={styles.card}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2>Certificate details</h2>
+                  <p>Required fields are marked and reused across every selected endorsement.</p>
+                </div>
+              </div>
 
-      <div className={styles.signatureContainer}>
-        <p className={styles.signatureLabel}>
-          Draw your signature (or leave blank and sign on paper):
-        </p>
-        <div className={styles.signatureWrapper}>
-          <canvas
-            ref={canvasRef}
-            className={styles.signatureCanvas}
-            width={800}
-            height={300}
-          />
+              <div className={styles.inputGrid}>
+                {FIELD_CONFIG.map((field) => (
+                  <label key={field.key} className={styles.field}>
+                    <span>
+                      {field.label}
+                      {field.required ? ' *' : ' (optional)'}
+                    </span>
+                    <input
+                      type={field.type}
+                      value={formData[field.key]}
+                      onChange={handleChange(field.key)}
+                      autoComplete={field.autoComplete}
+                      placeholder={field.placeholder}
+                      inputMode={field.inputMode}
+                      maxLength={field.maxLength}
+                      className={errors[field.key] ? styles.fieldError : ''}
+                    />
+                    {errors[field.key] ? <small>{errors[field.key]}</small> : null}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.card}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2>Signature</h2>
+                  <p>Draw a signature now or leave it blank and sign the printed page by hand.</p>
+                </div>
+                <button className={styles.ghostButton} onClick={clearSignature} type="button">
+                  Clear signature
+                </button>
+              </div>
+
+              <div className={styles.signatureFrame}>
+                <canvas ref={canvasRef} className={styles.signatureCanvas} />
+              </div>
+            </div>
+
+            <div className={styles.card}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2>Export</h2>
+                  <p>Select templates first, then generate and review the packet before printing.</p>
+                </div>
+              </div>
+
+              <div className={styles.actionRow}>
+                <button className={styles.primaryButton} onClick={openModal} type="button">
+                  Select endorsements ({selectedTemplates.length})
+                </button>
+                <button className={styles.secondaryButton} onClick={handleGeneratePDF} type="button">
+                  Generate PDF
+                </button>
+                <button className={styles.secondaryButton} onClick={handlePreview} type="button" disabled={!pdfUrl}>
+                  Preview
+                </button>
+                <button className={styles.secondaryButton} onClick={handlePrint} type="button" disabled={!pdfUrl}>
+                  Print
+                </button>
+              </div>
+
+              <p className={styles.status}>{statusMessage}</p>
+              {errors.selectedTemplates ? <p className={styles.inlineError}>{errors.selectedTemplates}</p> : null}
+            </div>
+          </section>
+
+          <aside className={styles.sidePanel}>
+            <div className={styles.card}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2>Selection summary</h2>
+                  <p>Current endorsement packet contents.</p>
+                </div>
+              </div>
+
+              {selectedTemplateDetails.length > 0 ? (
+                <div className={styles.selectedList}>
+                  {selectedTemplateDetails.map((template) => (
+                    <div key={template.title} className={styles.selectedCard}>
+                      <div className={styles.selectedMeta}>
+                        <span>{template.category}</span>
+                        <button type="button" onClick={() => handleTemplateSelection(template.title)}>
+                          Remove
+                        </button>
+                      </div>
+                      <h3>{template.title}</h3>
+                      <p>{template.preview.slice(0, 160)}...</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyState}>
+                  <p>No templates selected yet.</p>
+                  <button className={styles.ghostButton} onClick={openModal} type="button">
+                    Browse templates
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.card}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2>Workflow notes</h2>
+                </div>
+              </div>
+              <ul className={styles.noteList}>
+                <li>Use template search to narrow by solo, review, or instructor endorsements.</li>
+                <li>Generating a new PDF replaces the previous in-memory file URL cleanly.</li>
+                <li>Blank signature mode keeps the signature line but omits the image.</li>
+              </ul>
+            </div>
+          </aside>
         </div>
-        <button
-          className={styles.clearButton}
-          onClick={() => {
-            const ctx = canvasRef.current.getContext('2d');
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          }}
-        >
-          Clear
-        </button>
-      </div>
-
-      <div className={styles.buttonSection}>
-        <button onClick={openModal}>Select Endorsement</button>
-        <button onClick={handleGeneratePDF}>Generate PDF</button>
-        <button onClick={handlePreview}>Preview</button>
-        <button onClick={handlePrint}>Print</button>
       </div>
 
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        contentLabel="Select Template"
+        contentLabel="Select endorsement templates"
         className="Modal"
         overlayClassName="Overlay"
       >
-        <div className="ModalHeader">
-          <div className="HeaderContent">
-            <h2>Select Templates</h2>
+        <div className="endorsementModal">
+          <div className="endorsementModalHeader">
+            <div>
+              <h2>Select endorsement templates</h2>
+              <p>Selected templates stay pinned to the top of the result list.</p>
+            </div>
+            <div className="endorsementModalActions">
+              <button type="button" className="modalGhostButton" onClick={() => setSelectedTemplates([])}>
+                Clear all
+              </button>
+              <button type="button" className="modalPrimaryButton" onClick={closeModal}>
+                Done
+              </button>
+            </div>
           </div>
-          <div className="HeaderButtons">
-            <button onClick={handleClearSelection} className="ClearSelectionButton">
-              Clear
-            </button>
-            <button onClick={handleConfirmSelection} className="ConfirmButton">
-              Confirm
-            </button>
-            <button onClick={closeModal} className="CloseButton">
-              X
-            </button>
-          </div>
-        </div>
 
-        <div className="SelectedTemplates">
-          {selectedTemplates.length > 0 && (
-            <ul>
+          <div className="endorsementModalToolbar">
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search by endorsement title, category, or wording"
+              className="endorsementModalSearch"
+            />
+            <span className="endorsementResultCount">{visibleTemplates.length} results</span>
+          </div>
+
+          {selectedTemplates.length > 0 ? (
+            <div className="endorsementSelectedBar">
               {selectedTemplates.map((template) => (
-                <li key={template} className="SelectedTemplate">
+                <span key={template} className="endorsementChip">
                   {template}
-                  <button
-                    onClick={() => handleDeselectTemplate(template)}
-                    className="DeselectButton"
-                  >
+                  <button type="button" className="endorsementChipRemove" onClick={() => handleTemplateSelection(template)}>
                     x
                   </button>
-                </li>
+                </span>
               ))}
-            </ul>
-          )}
-        </div>
+            </div>
+          ) : null}
 
-        <ul className="TemplateList">
-          {Object.keys(templates).map((templateKey) => (
-            <li
-              key={templateKey}
-              className={selectedTemplates.includes(templateKey) ? 'SelectedTemplate' : ''}
-              onClick={() => handleTemplateSelection(templateKey)}
-            >
-              {templateKey}
-            </li>
-          ))}
-        </ul>
+          <div className="endorsementTemplateScroller">
+            <div className="endorsementTemplateGrid">
+              {visibleTemplates.map((template) => (
+                <button
+                  key={template.title}
+                  type="button"
+                  className={`endorsementTemplateCard ${template.selected ? 'endorsementTemplateCardSelected' : ''}`}
+                  onClick={() => handleTemplateSelection(template.title)}
+                  aria-pressed={template.selected}
+                >
+                  <div className="endorsementTemplateTop">
+                    <span className="endorsementTemplateCategory">{template.category}</span>
+                    <span className="endorsementTemplateToggle">{template.selected ? 'Selected' : 'Add'}</span>
+                  </div>
+                  <h3>{template.title}</h3>
+                  <p className="endorsementTemplatePreview">{template.preview.slice(0, 220)}...</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </Modal>
     </>
   );
